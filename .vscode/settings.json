@@ -1,0 +1,152 @@
+{
+    /*
+     * settings.json tells VS Code to use Prettier
+     * .prettierrc tells Prettier how to format (spacing, quotes, etc.)
+     * Works across all editors, not just VS Code (team consistency)
+     *
+     * For Python Projects:
+     *   - Python: Black Formatter (no .prettierrc needed) or Ruff extension (linting/import sorting)
+     *   - JSON/Markdown: Prettier (uses .prettierrc)
+     *   - YAML: Red Hat YAML Extension (doesn't use .prettierrc, uses setting.json)
+     */
+
+    // General editor settings
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.detectIndentation": false,
+    "editor.autoIndent": "advanced",
+    "editor.rulers": [120],
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": false,
+        "strings": true
+    },
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+
+    // Python settings (extention: ms-python.python)
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    "python.analysis.inlayHints.variableTypes": true,
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnusedImport": "information"
+    },
+
+    // Cursor Pyright settings (Built-in extension in Cursor)
+    "cursorpyright.analysis.autoImportCompletions": true,
+    "cursorpyright.analysis.autoSearchPaths": true,
+    "cursorpyright.analysis.typeCheckingMode": "strict",
+    "cursorpyright.analysis.diagnosticMode": "workspace",
+    "cursorpyright.analysis.inlayHints.functionReturnTypes": true,
+    "cursorpyright.analysis.inlayHints.variableTypes": true,
+    "cursorpyright.analysis.diagnosticSeverityOverrides": {
+        "reportUnusedImport": "information"
+    },
+
+    // Language-specific settings
+    "[python]": {
+        // "editor.defaultFormatter": "ms-python.black-formatter", // Black formatter extension
+        "editor.defaultFormatter": "charliermarsh.ruff", // Ruff extension (linting/import sorting)
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        },
+        "editor.tabSize": 4,
+        "editor.wordBasedSuggestions": "off"
+    },
+
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml", // standard YAML extension
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+
+    "[yml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml", // standard YAML extension
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+
+    "[markdown]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false
+    },
+
+    // File associations: Only need associations for non-standard patterns or overrides.
+    // Standard patterns are handled by the editor.
+    "files.associations": {
+        "*.env.*.sh": "shellscript",
+        "*.env.*.sh.example": "shellscript",
+        "*.env.example": "properties",
+        ".env.*": "properties",
+        "*.yml": "yaml",
+        "*.yaml": "yaml",
+        "*.html": "html",
+        "*.js": "javascriptreact",
+        "*.ts": "typescriptreact",
+        "*.jsx": "javascriptreact",
+        "*.tsx": "typescriptreact",
+        "*.css": "css",
+        "*.scss": "scss",
+        "*.sass": "sass"
+    },
+
+    // Hides files/folders from the file explorer sidebar entirely
+    "files.exclude": {},
+
+    // Excludes files/folders from search results only, but they remain visible in the file explorer
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.venv": true,
+        "**/htmlcov": true
+    },
+
+    // Tells VS Code to not watch these files/folders for changes
+    // Excluding them from file watching is a standard performance optimization for Python projects.
+    "files.watcherExclude": {
+        "**/__pycache__/**": true, // Python bytecode cache
+        "**/.pytest_cache/**": true, // Pytest cache
+        "**/.mypy_cache/**": true, // MyPy type checker cache
+        "**/.venv/**": true // Virtual environment
+    },
+
+    // Testing
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": ["tests", "-v", "--tb=short", "--cov=app", "--cov-report=html"],
+    "python.testing.autoTestDiscoverOnSaveEnabled": true
+}

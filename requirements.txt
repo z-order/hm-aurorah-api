@@ -1,0 +1,47 @@
+# FastAPI Framework
+fastapi
+uvicorn[standard]
+python-multipart
+scalar-fastapi
+
+# Pydantic for data validation
+pydantic
+pydantic-settings
+
+# SQLModel & SQLAlchemy for database
+sqlmodel
+sqlalchemy
+asyncpg
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[bcrypt]
+
+# UUID7: Unix timestamp + random bits (recommended for databases)
+# RFC 9562 (2024) - New standard (supersedes RFC 4122)
+uuid-utils
+
+# HTTP Client
+httpx
+
+# LangGraph / LangChain SDKs
+langgraph-sdk
+langchain-core
+
+# Redis
+redis
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Development tools
+black
+isort
+mypy
+pyright
+flake8
+ruff
+ruff-lsp
+pre-commit
