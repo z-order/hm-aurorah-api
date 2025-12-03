@@ -46,6 +46,7 @@ services:
             bash -c "
                 docker-entrypoint.sh postgres &
                 until pg_isready -U postgres; do sleep 1; done
+                psql -U postgres -c 'CREATE DATABASE IF NOT EXISTS aurorah;'
                 psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS auth;'
                 psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS lang;'
                 wait

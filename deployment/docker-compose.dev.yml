@@ -46,6 +46,7 @@ services:
             bash -c "
                 docker-entrypoint.sh postgres &
                 until pg_isready -U postgres; do sleep 1; done
+                psql -U postgres -c 'CREATE DATABASE IF NOT EXISTS aurorah;'
                 psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS auth;'
                 psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS lang;'
                 wait
@@ -66,7 +67,7 @@ services:
                 echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
                 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers $$NUM_OF_WORKERS
         env_file:
-        - ../.env.development
+            - ../.env.development
         networks:
             - main-network
         depends_on:
