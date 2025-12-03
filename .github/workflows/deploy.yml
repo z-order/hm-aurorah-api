@@ -51,8 +51,8 @@ jobs:
                   API_KEY7=${{ secrets.API_KEY7 }}
                   API_KEY8=${{ secrets.API_KEY8 }}
                   API_KEY9=${{ secrets.API_KEY9 }}
-                  REDIS_URL=${{ secrets.REDIS_URL }}
-                  POSTGRES_URL=${{ vars.POSTGRES_URL }}
+                  REDIS_URL=${{ vars.REDIS_URL }}
+                  POSTGRES_URL=${{ secrets.POSTGRES_URL }}
                   LANGGRAPH_API_URL=${{ vars.LANGGRAPH_API_URL }}
                   EOF
                   "
