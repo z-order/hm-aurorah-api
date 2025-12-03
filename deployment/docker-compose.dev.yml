@@ -1,0 +1,86 @@
+name: aurorah
+services:
+    hm-aurorah-redis:
+        image: redis:6
+        container_name: hm-aurorah-redis
+        healthcheck:
+            test: redis-cli ping
+            start_period: 5s
+            interval: 300s
+            timeout: 1s
+            retries: 5
+        ports:
+            - "6379:6379"
+        networks:
+            - main-network
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "10"
+    hm-aurorah-postgres:
+        image: postgres:16
+        container_name: hm-aurorah-postgres
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        volumes:
+            - db-data:/var/lib/postgresql/data
+        healthcheck:
+            test: pg_isready -U postgres
+            start_period: 5s
+            timeout: 1s
+            retries: 5
+            interval: 300s
+        networks:
+            - main-network
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "10"
+        command: >
+            bash -c "
+                docker-entrypoint.sh postgres &
+                until pg_isready -U postgres; do sleep 1; done
+                psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS auth;'
+                psql -U postgres -d aurorah -c 'CREATE SCHEMA IF NOT EXISTS lang;'
+                wait
+            "
+    hm-aurorah-api:
+        image: hm-aurorah-api
+        container_name: hm-aurorah-api
+        restart: always
+        ports:
+            - 33001:8000
+        working_dir: /home
+        entrypoint: /bin/sh
+        command:
+            - -c
+            - |
+                NUM_OF_CPUS=$$(nproc --all)
+                NUM_OF_WORKERS=$((NUM_OF_CPUS * 2 + 1))
+                echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
+                uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers $$NUM_OF_WORKERS
+        env_file:
+        - ../.env.development
+        networks:
+            - main-network
+        depends_on:
+            hm-aurorah-redis:
+                condition: service_healthy
+            hm-aurorah-postgres:
+                condition: service_healthy
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "10"
+networks:
+    main-network:
+volumes:
+    db-data:
+        driver: local

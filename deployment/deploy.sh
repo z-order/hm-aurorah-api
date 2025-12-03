@@ -1,4 +1,21 @@
-#/bin/sh
+#!/bin/sh
+
+#
+# Usage:
+# $ deploy.sh <environment> <target>
+#
+# For development:
+# $ deploy.sh development api
+# $ deploy.sh development all
+#
+# For production:
+# $ deploy.sh production api
+# $ deploy.sh production all
+#
+
+# Get parameters (with defaults)
+ENV=${1:-development}
+TARGET=${2:-api}
 
 function build_api() {
     cd "$(dirname "$0")/.." || exit 1
@@ -12,25 +29,41 @@ function build() {
 
 function start() {
     cd "$(dirname "$0")" || exit 1
-    sudo docker compose up -d
+    if [ "$ENV" = "development" ]; then
+        sudo docker compose -f docker-compose.dev.yml up -d
+    else
+        sudo docker compose -f docker-compose.prod.yml up -d
+    fi
     cd - > /dev/null || exit 1
 }
 
 function start_api() {
     cd "$(dirname "$0")" || exit 1
-    sudo docker compose up -d hm-aurorah-api
+    if [ "$ENV" = "development" ]; then
+        sudo docker compose -f docker-compose.dev.yml up -d hm-aurorah-api
+    else
+        sudo docker compose -f docker-compose.prod.yml up -d hm-aurorah-api
+    fi
     cd - > /dev/null || exit 1
 }
 
 function stop() {
     cd "$(dirname "$0")" || exit 1
-    sudo docker compose stop
+    if [ "$ENV" = "development" ]; then
+        sudo docker compose -f docker-compose.dev.yml stop
+    else
+        sudo docker compose -f docker-compose.prod.yml stop
+    fi
     cd - > /dev/null || exit 1
 }
 
 function stop_api() {
     cd "$(dirname "$0")" || exit 1
-    sudo docker compose stop hm-aurorah-api
+    if [ "$ENV" = "development" ]; then
+        sudo docker compose -f docker-compose.dev.yml stop hm-aurorah-api
+    else
+        sudo docker compose -f docker-compose.prod.yml stop hm-aurorah-api
+    fi
     cd - > /dev/null || exit 1
 }
 
@@ -55,7 +88,7 @@ function deploy_api() {
 }
 
 # Handle command line arguments
-case "${1:-api}" in
+case "$TARGET" in
     all)
         deploy
         ;;
@@ -63,9 +96,9 @@ case "${1:-api}" in
         deploy_api
         ;;
     *)
-        echo "Usage: $0 {all|api}"
-        echo "  all - Deploy all services"
-        echo "  api - Deploy API service only (default)"
+        echo "Usage: $0 <environment> <target>"
+        echo "  environment: development | production (default: development)"
+        echo "  target: all | api (default: api)"
         exit 1
         ;;
 esac

@@ -65,9 +65,8 @@ services:
                 NUM_OF_WORKERS=$((NUM_OF_CPUS * 2 + 1))
                 echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
                 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers $$NUM_OF_WORKERS
-        environment:
-            REDIS_URL: redis://hm-aurorah-redis:6379
-            POSTGRES_URL: postgresql://postgres:postgres@hm-aurorah-postgres:5432/postgres
+        env_file:
+            - ../.env.production
         networks:
             - main-network
         depends_on:
