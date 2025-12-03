@@ -17,17 +17,17 @@
 ENV=${1:-development}
 TARGET=${2:-api}
 
-function build_api() {
+build_api() {
     cd "$(dirname "$0")/.." || exit 1
     sudo docker build -f deployment/Dockerfile -t hm-aurorah-api .
     cd - > /dev/null || exit 1
 }
 
-function build() {
+build() {
     build_api
 }
 
-function start() {
+start() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml up -d
@@ -37,7 +37,7 @@ function start() {
     cd - > /dev/null || exit 1
 }
 
-function start_api() {
+start_api() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml up -d hm-aurorah-api
@@ -47,7 +47,7 @@ function start_api() {
     cd - > /dev/null || exit 1
 }
 
-function stop() {
+stop() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml stop
@@ -57,7 +57,7 @@ function stop() {
     cd - > /dev/null || exit 1
 }
 
-function stop_api() {
+stop_api() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml stop hm-aurorah-api
@@ -67,22 +67,22 @@ function stop_api() {
     cd - > /dev/null || exit 1
 }
 
-function restart() {
+restart() {
     stop
     start
 }
 
-function restart_api() {
+restart_api() {
     stop_api
     start_api
 }
 
-function deploy() {
+deploy() {
     build
     restart
 }
 
-function deploy_api() {
+deploy_api() {
     build_api
     restart_api
 }
