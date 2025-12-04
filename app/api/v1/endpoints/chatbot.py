@@ -2,13 +2,12 @@
 AI Chatbot endpoints
 """
 
-import asyncio
 import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import desc, select, text
 from sqlalchemy.engine.result import Result
 from sqlalchemy.engine.row import Row
@@ -226,6 +225,7 @@ async def delete_chatbot_task(
 
 @router.post("/message", response_model=ChatbotMessageCreateResponse, status_code=status.HTTP_201_CREATED)
 async def create_chatbot_message(
+    background_tasks: BackgroundTasks,
     chatbot_message_data: ChatbotMessageCreate,
     db: AsyncSession = Depends(get_db),
 ) -> ChatbotMessage:
@@ -309,14 +309,33 @@ async def create_chatbot_message(
             await db.commit()
             await db.refresh(chatbot_message)
 
+            # Problem: asyncio.create_task() creates a "fire-and-forget" task,
+            # but when the FastAPI request handler completes and returns the response,
+            # the event loop context for that request is cleaned up.
+            # The background task loses its execution context, causing the Redis async timeout to fail.
+            #
+            # 1. asyncio.create_task() creates a task that runs in the background
+            # 2. The HTTP request returns 201 Created before the task completes
+            # 3. When the request handler exits, the task gets cancelled/garbage collected
+            # 4. Redis async operations fail with RuntimeError: Timeout should be used inside a task because the task context is gone
+            #
             # Create a task to create the chatbot message
-            asyncio.create_task(
-                atask_for_create_chatbot_message(
-                    task=task,
-                    chatbot_message_data=chatbot_message_data,
-                    chatbot_message=chatbot_message,
-                    assistant_id=AssistantID.TASK_TRANSLATION,
-                )
+            # asyncio.create_task(
+            #     atask_for_create_chatbot_message(
+            #         task=task,
+            #         chatbot_message_data=chatbot_message_data,
+            #         chatbot_message=chatbot_message,
+            #         assistant_id=AssistantID.TASK_TRANSLATION,
+            #     )
+            # )
+            #
+            # Solution: Use FastAPI's BackgroundTasks - pass async function directly
+            background_tasks.add_task(
+                atask_for_create_chatbot_message,
+                task=task,
+                chatbot_message_data=chatbot_message_data,
+                chatbot_message=chatbot_message,
+                assistant_id=AssistantID.TASK_TRANSLATION,
             )
 
         else:
@@ -363,15 +382,34 @@ async def create_chatbot_message(
 
             logger.info(f"chatbot_message[2]: {chatbot_message}")
 
+            # Problem: asyncio.create_task() creates a "fire-and-forget" task,
+            # but when the FastAPI request handler completes and returns the response,
+            # the event loop context for that request is cleaned up.
+            # The background task loses its execution context, causing the Redis async timeout to fail.
+            #
+            # 1. asyncio.create_task() creates a task that runs in the background
+            # 2. The HTTP request returns 201 Created before the task completes
+            # 3. When the request handler exits, the task gets cancelled/garbage collected
+            # 4. Redis async operations fail with RuntimeError: Timeout should be used inside a task because the task context is gone
+            #
             # Create a task to resume the chatbot message
-            asyncio.create_task(
-                atask_for_create_chatbot_message(
-                    task=task,
-                    chatbot_message_data=chatbot_message_data,
-                    chatbot_message=chatbot_message,
-                    assistant_id=AssistantID.TASK_TRANSLATION,
-                    hitl_mode=True,
-                )
+            # asyncio.create_task(
+            #     atask_for_create_chatbot_message(
+            #         task=task,
+            #         chatbot_message_data=chatbot_message_data,
+            #         chatbot_message=chatbot_message,
+            #         assistant_id=AssistantID.TASK_TRANSLATION,
+            #         hitl_mode=True,
+            #     )
+            #
+            # Solution: Use FastAPI's BackgroundTasks - pass async function directly
+            background_tasks.add_task(
+                atask_for_create_chatbot_message,
+                task=task,
+                chatbot_message_data=chatbot_message_data,
+                chatbot_message=chatbot_message,
+                assistant_id=AssistantID.TASK_TRANSLATION,
+                hitl_mode=True,
             )
 
         # I think it will be better to use chatbot_message.message_id as a channel id for the message queue.

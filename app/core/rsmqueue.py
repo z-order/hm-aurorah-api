@@ -106,7 +106,7 @@ class RedisStreamMessageQueue:
         stream_prefix: str = "mq:channel:",
         consumer_group: str = "mq-consumer-default",
         stream_id_type: Literal["stream_from_beginning", "stream_from_new_only"] = "stream_from_beginning",
-        maxlen: int = 10000,
+        maxlen: int = 10000,  # 10,000 messages
         ttl_seconds: int = 3600,  # 1 hour
         block_ms: int = 15000,  # 15 seconds
         read_count: int = 10,  # 10 messages

@@ -114,6 +114,11 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str | None = None
     REDIS_URL: str | None = None
 
+    # Redis Stream Message Queue Maxlen: 1 million messages (1M * 5 characters * 2 bytes = 10MB --> Maximum allowed textbook size)
+    REDIS_STREAM_MQ_MAXLEN: int = 1_000_000
+    # Redis Stream Message Queue TTL Seconds: 1 hour for development, 5 minutes for production (to prevent memory leak)
+    REDIS_STREAM_MQ_TTL_SECONDS: int = 3600 if ENVIRONMENT == "development" else 300
+
     @property
     def redis_url(self) -> str:
         """Construct Redis URL"""
