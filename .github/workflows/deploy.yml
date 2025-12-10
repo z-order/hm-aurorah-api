@@ -13,6 +13,11 @@ on:
     # Allows you to run this workflow manually from the Actions tab
     workflow_dispatch:
 
+# Permissions
+permissions:
+    id-token: write # for GitHub Actions OIDC
+    contents: read # for reading the code
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
     deploy:
@@ -25,11 +30,30 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Setup SSH key
+            # SSH key authentication (deprecated) -> This way has the issues on setting AWS security groups and firewall rules for the GitHub Action IPs (https://api.github.com/meta)
+            # - name: Setup SSH key
+            #   run: |
+            #       mkdir -p ~/.ssh
+            #       echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+            #       chmod 600 ~/.ssh/id_rsa
+
+            - name: Configure AWS credentials (OIDC)
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role
+                  aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: Verify AWS Login
+              run: aws sts get-caller-identity
+
+            - name: Setup SSH via AWS Systems Manager
               run: |
                   mkdir -p ~/.ssh
-                  echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-                  chmod 600 ~/.ssh/id_rsa
+                  aws ec2-instance-connect send-ssh-public-key \
+                    --instance-id ${{ secrets.INSTANCE_ID }} \
+                    --availability-zone ${{ secrets.AVAILABILITY_ZONE }} \
+                    --instance-os-user ${{ secrets.USERNAME }} \
+                    --ssh-public-key file://<(ssh-keygen -y -f <(ssh-keygen -t rsa -N '' -f /dev/stdout 2>/dev/null | tee ~/.ssh/id_rsa))
 
             - name: Add host to known_hosts
               run: |
