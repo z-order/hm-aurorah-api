@@ -14,7 +14,7 @@
     // "forwardPorts": [],
 
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools && pip install jupyterlab && pip install -r requirements.txt && pip install --upgrade pip",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y wget ca-certificates redis-tools && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main\" > /etc/apt/sources.list.d/pgdg.list' && sudo apt-get update && sudo apt-get install -y postgresql-client-18 && pip install jupyterlab && pip install -r requirements.txt && pip install --upgrade pip",
 
     // Configure tool-specific properties.
     "customizations": {

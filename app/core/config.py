@@ -38,14 +38,20 @@ class Settings(BaseSettings):
 
     # Server Configuration
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 33001
 
     # CORS Configuration
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
-        "http://localhost:8000",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:8000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "http://hm-aurorah-api",
+        "http://hm-aurorah-api:3000",
+        "http://dev.aurorah.ai",
+        "https://dev.aurorah.ai",
+        "http://aurorah.ai",
+        "https://aurorah.ai",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")

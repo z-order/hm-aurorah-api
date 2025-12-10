@@ -1,7 +1,7 @@
 name: aurorah
 services:
     hm-aurorah-redis:
-        image: redis:6
+        image: redis:latest
         container_name: hm-aurorah-redis
         healthcheck:
             test: redis-cli ping
@@ -19,16 +19,16 @@ services:
                 max-size: "50m"
                 max-file: "10"
     hm-aurorah-postgres:
-        image: postgres:16
+        image: postgres:latest
         container_name: hm-aurorah-postgres
         ports:
             - "5432:5432"
         environment:
             POSTGRES_DB: postgres
             POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
+            POSTGRES_PASSWORD: postgres-_-.
         volumes:
-            - db-data:/var/lib/postgresql/data
+            - db-data:/var/lib/postgresql
         healthcheck:
             test: pg_isready -U postgres
             start_period: 5s
@@ -56,7 +56,7 @@ services:
         container_name: hm-aurorah-api
         restart: always
         ports:
-            - 33001:8000
+            - 33001:33001
         working_dir: /home
         entrypoint: /bin/sh
         command:
@@ -65,7 +65,7 @@ services:
                 NUM_OF_CPUS=$$(nproc --all)
                 NUM_OF_WORKERS=$((NUM_OF_CPUS * 2 + 1))
                 echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
-                uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers $$NUM_OF_WORKERS
+                uvicorn app.main:app --host 0.0.0.0 --port 33001 --workers $$NUM_OF_WORKERS
         env_file:
             - ../.env.production
         networks:
@@ -82,6 +82,8 @@ services:
                 max-file: "10"
 networks:
     main-network:
+        name: aurorah_main_network
+
 volumes:
     db-data:
         driver: local

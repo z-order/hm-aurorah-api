@@ -6,6 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any, Literal, cast
 
+import httpx
 from sqlalchemy import update
 
 from app.core.config import settings
@@ -63,8 +64,28 @@ async def atask_for_create_chatbot_message(
             await db.commit()
         chatbot_message.thread_id = thread_id  # Update local object for later use
 
+        #####################
+        # Process the files #
+        ##################### ---->> Start
         # chatbot_message_data.files will be processed here.
-        # ...
+        for file in chatbot_message_data.files:
+            # check if the file is .txt extension, if not, skip it.
+            if file.extension != "txt":
+                continue
+
+            # Read the file content from the file.url
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(file.url)
+                    response.raise_for_status()
+                    file_content = response.text
+            except Exception as e:
+                logger.error(f"Failed to read file from {file.url}: {str(e)}")
+                continue
+
+            # Add the file content to the prompt
+            prompt = f"\n\n{file_content}"
+        ##################### <<---- End
 
         # Set async generator for handling .run_new_task() and/or .run_hitl_task()
         async_generator = (

@@ -32,8 +32,8 @@ COPY app ./app
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
 
-# Expose port 8000
-EXPOSE 8000
+# Expose port 33001
+EXPOSE 33001
 
 # Run the app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "33001"]

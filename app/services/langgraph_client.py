@@ -292,17 +292,29 @@ class LangGraphClientSDK:
         client: LangGraphClient = await self.get_client(caller=__caller__)
 
         # Configure the task
-        config: Config = {"configurable": {"user_id": user_id}}
+        translation_role: str = """"You are a professional translation/localization expert.\
+            If the source language is Korean then,
+            Target language: English.\
+            Target country: United States.\
+            Target city: New York.\
+            If the source language is English then,
+            Target language: Korean.\
+            Target country: South Korea.\
+            Target city: Seoul.\
+            Target audience: General public.\
+            Target purpose: Web novel translation. \
+            """.strip()
+        config: Config = {"configurable": {"user_id": user_id, "translation_role": translation_role}}
 
         # Run the new task
-        async for chunk in client.runs.stream(
+        async for chunk in client.runs.stream(  # type: ignore[misc]
             thread_id,
             assistant_id,
-            input={"messages": [HumanMessage(content=prompt)]},
+            input={"messages": [HumanMessage(content=prompt)]},  # type: ignore[arg-type]
             config=config,
             stream_mode=["updates", "tasks", "events"],
         ):
-            self.debug_chunk(user_id, task_id, thread_id, chunk, True)
+            self.debug_chunk(user_id, task_id, thread_id, cast(StreamPart, chunk), True)
             yield chunk
 
     # HITL: Human-in-the-loop

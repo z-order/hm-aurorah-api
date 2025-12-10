@@ -23,11 +23,11 @@ build_api() {
     cd - > /dev/null || exit 1
 }
 
-build() {
+build_all() {
     build_api
 }
 
-start() {
+start_all() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml up -d
@@ -47,7 +47,7 @@ start_api() {
     cd - > /dev/null || exit 1
 }
 
-stop() {
+stop_all() {
     cd "$(dirname "$0")" || exit 1
     if [ "$ENV" = "development" ]; then
         sudo docker compose -f docker-compose.dev.yml stop
@@ -67,9 +67,9 @@ stop_api() {
     cd - > /dev/null || exit 1
 }
 
-restart() {
-    stop
-    start
+restart_all() {
+    stop_all
+    start_all
 }
 
 restart_api() {
@@ -77,9 +77,9 @@ restart_api() {
     start_api
 }
 
-deploy() {
-    build
-    restart
+deploy_all() {
+    build_all
+    restart_all
 }
 
 deploy_api() {
@@ -90,7 +90,7 @@ deploy_api() {
 # Handle command line arguments
 case "$TARGET" in
     all)
-        deploy
+        deploy_all
         ;;
     api)
         deploy_api

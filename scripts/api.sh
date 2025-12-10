@@ -3,13 +3,13 @@
 #
 # API script for Aurorah API Server
 #
-API_URL=${API_URL:-http://localhost:8000}
+API_URL=${API_URL:-http://localhost:33001}
 API_KEY=${API_KEY:-sk-test123}
 
 #
 # Example: 
 #
-# $ ./api.sh --url http://localhost:8000/api/v1/users/ --api-key sk-test123
+# $ ./api.sh --url http://localhost:33001/api/v1/users/ --api-key sk-test123
 #
 # or:
 #
@@ -17,7 +17,7 @@ API_KEY=${API_KEY:-sk-test123}
 #
 # The same way for using curl directly (without the script):
 #
-# $ curl -i http://localhost:8000/api/v1/users/ \
+# $ curl -i http://localhost:33001/api/v1/users/ \
 #   -H "Authorization: Bearer sk-test123"
 #
 
@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--url http://localhost:8000] [--api-key sk-test123] or $0 /path"
+            echo "Usage: $0 [--url http://localhost:33001] [--api-key sk-test123] or $0 /path"
             exit 1
             ;;
     esac
@@ -54,7 +54,7 @@ elif [[ -n "$PATH_ARG" ]]; then
     FINAL_URL="${API_URL}${PATH_ARG}"
 else
     echo "Error: No URL or path provided"
-    echo "Usage: $0 [--url http://localhost:8000/api/v1/users/] [--api-key sk-test123]"
+    echo "Usage: $0 [--url http://localhost:33001/api/v1/users/] [--api-key sk-test123]"
     echo "   or: $0 /api/v1/users [--api-key sk-test123]"
     exit 1
 fi

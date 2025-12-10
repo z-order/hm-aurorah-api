@@ -4,7 +4,7 @@ API v1 main router
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import ai, auth, chatbot, chatbot_stream, message_queue, projects, tasks, users
+from app.api.v1.endpoints import auth, chatbot, chatbot_stream, message_queue, projects, tasks, users
 
 api_router = APIRouter()
 
@@ -16,4 +16,3 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Samples - Authenti
 api_router.include_router(users.router, prefix="/users", tags=["Samples - Users"])
 api_router.include_router(projects.router, prefix="/projects", tags=["Samples - Projects"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["Samples - Tasks"])
-api_router.include_router(ai.router, prefix="/ai", tags=["Samples - AI Services"])

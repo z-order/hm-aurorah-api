@@ -112,6 +112,7 @@ async def api_key_guard(request: Request, call_next: Callable[[Request], Awaitab
     exempt_paths = {
         "/",  # root health
         "/health",
+        "/api/latest/docs",  # Scalar API reference
         f"{settings.API_V1_STR}/openapi.json",
         f"{settings.API_V1_STR}/docs",
         f"{settings.API_V1_STR}/redoc",
@@ -119,7 +120,13 @@ async def api_key_guard(request: Request, call_next: Callable[[Request], Awaitab
         f"{settings.API_V1_STR}/auth/register",
     }
 
-    should_enforce = path.startswith(settings.API_V1_STR) and path not in exempt_paths
+    exempt_start_with_paths = {
+        f"{settings.API_V1_STR}/mq/channels",
+    }
+
+    should_enforce = not (
+        path in exempt_paths or any(path.startswith(start_with_path) for start_with_path in exempt_start_with_paths)
+    )
 
     if should_enforce:
         # API key check (if configured)
@@ -207,12 +214,12 @@ if __name__ == "__main__":
 
     #
     # Use '$ python -m app.main' on the root directory of the project for development
-    # Use '$ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload' for production deployment
+    # Use '$ uvicorn app.main:app --host 0.0.0.0 --port 33001 --reload' for production deployment
     #
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=33001,
         reload=True,
         log_level="debug",
     )

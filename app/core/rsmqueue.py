@@ -769,15 +769,15 @@ QUICK REFERENCE GUIDE
 6. CURL EXAMPLES
    --------------
    # Send message
-   curl -X POST http://localhost:8000/api/v1/mq/channels/general/messages \
+   curl -X POST http://localhost:33001/api/v1/mq/channels/general/messages \
      -H "Content-Type: application/json" \
      -d '{"sender":"alice","text":"hello world"}'
 
    # Subscribe to events (SSE)
-   curl -N http://localhost:8000/api/v1/mq/channels/general/events
+   curl -N http://localhost:33001/api/v1/mq/channels/general/events
 
    # Get channel info
-   curl http://localhost:8000/api/v1/mq/channels/general/info
+   curl http://localhost:33001/api/v1/mq/channels/general/info
 
 
 7. REDIS COMMANDS USED

@@ -121,7 +121,7 @@ async def subscribe_to_channel_events(
 
     Example:
 
-        $ curl -N http://localhost:8000/api/v1/mq/channels/general/events?method=s
+        $ curl -N http://localhost:33001/api/v1/mq/channels/general/events?method=s
     """
 
     consumer_id = request.query_params.get("consumer") or str(uuid7())
@@ -283,15 +283,15 @@ async def index():
 
     Send message example:
 
-        $ curl -X POST http://localhost:8000/api/v1/mq/channels/general/messages -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY" -d '{"sender":"alice","text":"hello world"}'
+        $ curl -X POST http://localhost:33001/api/v1/mq/channels/general/messages -H "Content-Type: application/json" -H "Authorization: Bearer $API_KEY" -d '{"sender":"alice","text":"hello world"}'
 
     Subscribe to events example:
 
-        $ curl -H "Authorization: Bearer $API_KEY" -N http://localhost:8000/api/v1/mq/channels/general/events
+        $ curl -H "Authorization: Bearer $API_KEY" -N http://localhost:33001/api/v1/mq/channels/general/events
 
     Get channel info example:
 
-        $ curl -H "Authorization: Bearer $API_KEY" http://localhost:8000/api/v1/mq/channels/general/info
+        $ curl -H "Authorization: Bearer $API_KEY" http://localhost:33001/api/v1/mq/channels/general/info
 
     Returns: API information and usage examples
     """
@@ -300,12 +300,12 @@ async def index():
             "name": "Message Queue API",
             "description": "Redis Stream-based message queue for chat and events",
             "examples": {
-                "send_message": "$ curl -X POST http://localhost:8000/api/v1/mq/channels/general/messages "
+                "send_message": "$ curl -X POST http://localhost:33001/api/v1/mq/channels/general/messages "
                 '-H "Content-Type: application/json" '
                 '-H "Authorization: Bearer $API_KEY" '
                 '-d \'{"sender":"alice","text":"hello world"}\'',
-                "subscribe_sse": '$ curl -H "Authorization: Bearer $API_KEY" -N http://localhost:8000/api/v1/mq/channels/general/events',
-                "channel_info": '$ curl -H "Authorization: Bearer $API_KEY" http://localhost:8000/api/v1/mq/channels/general/info',
+                "subscribe_sse": '$ curl -H "Authorization: Bearer $API_KEY" -N http://localhost:33001/api/v1/mq/channels/general/events',
+                "channel_info": '$ curl -H "Authorization: Bearer $API_KEY" http://localhost:33001/api/v1/mq/channels/general/info',
             },
         }
     )
