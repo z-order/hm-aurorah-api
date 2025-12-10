@@ -49,11 +49,12 @@ jobs:
             - name: Setup SSH via AWS Systems Manager
               run: |
                   mkdir -p ~/.ssh
+                  ssh-keygen -t rsa -b 2048 -N '' -f ~/.ssh/id_rsa -q
                   aws ec2-instance-connect send-ssh-public-key \
                     --instance-id ${{ secrets.INSTANCE_ID }} \
                     --availability-zone ${{ secrets.AVAILABILITY_ZONE }} \
                     --instance-os-user ${{ secrets.USERNAME }} \
-                    --ssh-public-key file://<(ssh-keygen -y -f <(ssh-keygen -t rsa -N '' -f /dev/stdout 2>/dev/null | tee ~/.ssh/id_rsa))
+                    --ssh-public-key file://~/.ssh/id_rsa.pub
 
             - name: Add host to known_hosts
               run: |
