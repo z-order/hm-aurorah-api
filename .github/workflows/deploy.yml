@@ -30,31 +30,38 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            # Temporary for the later solution: Stop SSH-ing from GitHub. Use SSM instead.
+            #
             # SSH key authentication (deprecated) -> This way has the issues on setting AWS security groups and firewall rules for the GitHub Action IPs (https://api.github.com/meta)
-            # - name: Setup SSH key
-            #   run: |
-            #       mkdir -p ~/.ssh
-            #       echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-            #       chmod 600 ~/.ssh/id_rsa
-
-            - name: Configure AWS credentials (OIDC)
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role
-                  aws-region: ${{ secrets.AWS_REGION }}
-
-            - name: Verify AWS Login
-              run: aws sts get-caller-identity
-
-            - name: Setup SSH via AWS Systems Manager
+            #
+            - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
-                  ssh-keygen -t rsa -b 2048 -N '' -f ~/.ssh/id_rsa -q
-                  aws ec2-instance-connect send-ssh-public-key \
-                    --instance-id ${{ secrets.INSTANCE_ID }} \
-                    --availability-zone ${{ secrets.AVAILABILITY_ZONE }} \
-                    --instance-os-user ${{ secrets.USERNAME }} \
-                    --ssh-public-key file://~/.ssh/id_rsa.pub
+                  echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
+
+            # AWS Systems Manager (OIDC) needs 22 port open for the GitHub Action IPs (https://api.github.com/meta)
+            #
+            # Solution: Stop SSH-ing from GitHub. Use SSM instead.
+            #
+            # - name: Configure AWS credentials (OIDC)
+            #   uses: aws-actions/configure-aws-credentials@v4
+            #   with:
+            #       role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role
+            #       aws-region: ${{ secrets.AWS_REGION }}
+            #
+            # - name: Verify AWS Login
+            #   run: aws sts get-caller-identity
+            #
+            # - name: Setup SSH via AWS Systems Manager
+            #   run: |
+            #       mkdir -p ~/.ssh
+            #       ssh-keygen -t rsa -b 2048 -N '' -f ~/.ssh/id_rsa -q
+            #       aws ec2-instance-connect send-ssh-public-key \
+            #         --instance-id ${{ secrets.INSTANCE_ID }} \
+            #         --availability-zone ${{ secrets.AVAILABILITY_ZONE }} \
+            #         --instance-os-user ${{ secrets.USERNAME }} \
+            #         --ssh-public-key file://~/.ssh/id_rsa.pub
 
             - name: Add host to known_hosts
               run: |
