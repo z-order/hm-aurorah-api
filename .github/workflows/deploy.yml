@@ -90,7 +90,7 @@ jobs:
 
             - name: Create .env.${{ vars.DEPLOY_ENV || 'production' }} file on remote host
               run: |
-                  ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd ${{ secrets.DEST }} && cat > .env.${{ vars.DEPLOY_ENV || 'production' }} << 'EOF'
+                  ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd ${{ secrets.DEST }}/deployment && cat > .env.${{ vars.DEPLOY_ENV || 'production' }} << 'EOF'
                   API_KEY1=${{ secrets.API_KEY1 }}
                   API_KEY2=${{ secrets.API_KEY2 }}
                   API_KEY3=${{ secrets.API_KEY3 }}
