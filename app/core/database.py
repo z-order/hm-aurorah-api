@@ -58,6 +58,8 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
 async def init_db() -> None:
     """
     Initialize database - create all tables
+    Note: In multi-worker deployments, this should be run once before starting workers
+    to avoid race conditions. The checkfirst=True prevents errors if tables exist.
     """
     async with engine.begin() as conn:
         # Import all models here to ensure they are registered with SQLModel
@@ -75,7 +77,7 @@ async def init_db() -> None:
             Task,
         )  # Reference to prevent auto-removal by mypy or pyright
 
-        # Create all tables
+        # Create all tables (checkfirst=True is default, skips existing tables)
         await conn.run_sync(SQLModel.metadata.create_all)
 
 

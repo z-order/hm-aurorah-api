@@ -3,6 +3,7 @@ Main FastAPI application entry point
 """
 
 import logging
+import os
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -33,8 +34,13 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting Aurorah API Server...")
-    await init_db()
-    logger.info("Database initialized")
+    # Skip init_db if SKIP_DB_INIT is set (for multi-worker deployments where
+    # migrations are run separately before starting workers)
+    if not os.getenv("SKIP_DB_INIT"):
+        await init_db()
+        logger.info("Database initialized")
+    else:
+        logger.info("Skipping database initialization (SKIP_DB_INIT is set)")
     yield
     # Shutdown
     logger.info("Shutting down Aurorah API Server...")
