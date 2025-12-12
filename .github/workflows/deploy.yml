@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Deploy to AWS EC2 Aurora Dev Server
+name: Deploy to AWS EC2 Aurora Development/Production Server
 
 # Controls when the workflow will run
 on:
@@ -71,7 +71,24 @@ jobs:
               run: |
                   rsync -avz --delete -e "ssh -p ${{ secrets.PORT }}" ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:${{ secrets.DEST }}
 
-            - name: Create .env file on remote host
+            - name: Create .env.postgres file on remote host
+              run: |
+                  ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd ${{ secrets.DEST }}/deployment && cat > .env.postgres << 'EOF'
+                  POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                  POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                  POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                  EOF
+                  "
+
+            - name: Create .env.minio file on remote host
+              run: |
+                  ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd ${{ secrets.DEST }}/deployment && cat > .env.minio << 'EOF'
+                  MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}
+                  MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}
+                  EOF
+                  "
+
+            - name: Create .env.${{ vars.DEPLOY_ENV || 'production' }} file on remote host
               run: |
                   ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd ${{ secrets.DEST }} && cat > .env.${{ vars.DEPLOY_ENV || 'production' }} << 'EOF'
                   API_KEY1=${{ secrets.API_KEY1 }}

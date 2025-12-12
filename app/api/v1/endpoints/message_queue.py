@@ -160,8 +160,6 @@ async def subscribe_to_channel_events(
                     "id": msg_id,
                     "type": "done" if event_type == "done" else "data",
                     "data": data,
-                    "ts": int(msg_id.split("-")[0]),
-                    "channel": channel_id,
                 }
 
                 # Yield as SSE event (system events like "done" use event: system)

@@ -89,7 +89,7 @@ services:
                 echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
                 uvicorn app.main:app --host 0.0.0.0 --port 33001 --workers $$NUM_OF_WORKERS
         env_file:
-            - .env.development
+            - .env.local
         networks:
             - main-network
         depends_on:
