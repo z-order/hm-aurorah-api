@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, String
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 from uuid_utils import uuid7
 
@@ -34,7 +34,10 @@ class ChatbotTaskBase(SQLModel):
     thread_id: str = Field(max_length=255)
     title: str = Field(default="New task", max_length=255)
     description: str | None = Field(default=None)
-    status: ChatbotTaskStatus = Field(default=ChatbotTaskStatus.READY)
+    status: ChatbotTaskStatus = Field(
+        default=ChatbotTaskStatus.READY,
+        sa_column=Column(String(32)),
+    )
     last_run_id: str | None = Field(default=None, max_length=512)  # Foreign key to lang.run.run_id (LangGraph Run ID)
 
 

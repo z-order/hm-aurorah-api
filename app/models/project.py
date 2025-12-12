@@ -5,6 +5,7 @@ Project model
 from datetime import UTC, datetime
 from enum import Enum
 
+from sqlalchemy import Column, String
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 
 
@@ -22,7 +23,10 @@ class ProjectBase(SQLModel):
 
     name: str = Field(max_length=255, index=True)
     description: str | None = Field(default=None)
-    status: ProjectStatus = Field(default=ProjectStatus.DRAFT)
+    status: ProjectStatus = Field(
+        default=ProjectStatus.DRAFT,
+        sa_column=Column(String(32)),
+    )
     user_id: int = Field(foreign_key="sample_users.id")
 
 

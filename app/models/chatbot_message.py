@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Column, DateTime
+from sqlalchemy import JSON, Column, DateTime, String
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 from uuid_utils import uuid7
 
@@ -60,7 +60,10 @@ class ChatbotMessageBase(SQLModel):
     user_id: str = Field(index=True)  # Foreign key to auth.users.id is managed outside SQLModel.
     thread_id: str | None = Field(default=None, max_length=255)
     contents: list[ChatbotMessageContent] = Field(default_factory=list, sa_column=Column(JSON))
-    status: ChatbotMessageStatus = Field(default=ChatbotMessageStatus.PENDING)
+    status: ChatbotMessageStatus = Field(
+        default=ChatbotMessageStatus.PENDING,
+        sa_column=Column(String(32)),
+    )
 
 
 class ChatbotMessage(ChatbotMessageBase, table=True):

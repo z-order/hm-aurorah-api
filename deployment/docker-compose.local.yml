@@ -24,6 +24,12 @@ services:
         image: redis:latest
         container_name: hm-aurorah-redis
         restart: always
+        privileged: true
+        sysctls:
+            # vm.overcommit_memory=1 tells Linux to always allow memory allocation requests, even if physical memory is low.
+            # Redis needs this because it forks a child process for background saves (RDB/AOF), which temporarily requires double the memory.
+            # Without this setting, the fork can fail if memory appears low.
+            - vm.overcommit_memory=1
         healthcheck:
             test: redis-cli ping
             start_period: 5s

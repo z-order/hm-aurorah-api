@@ -5,6 +5,7 @@ Task model
 from datetime import UTC, datetime
 from enum import Enum
 
+from sqlalchemy import Column, String
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 
 
@@ -32,8 +33,14 @@ class TaskBase(SQLModel):
 
     title: str = Field(max_length=255, index=True)
     description: str | None = Field(default=None)
-    status: TaskStatus = Field(default=TaskStatus.TODO)
-    priority: TaskPriority = Field(default=TaskPriority.MEDIUM)
+    status: TaskStatus = Field(
+        default=TaskStatus.TODO,
+        sa_column=Column(String(32)),
+    )
+    priority: TaskPriority = Field(
+        default=TaskPriority.MEDIUM,
+        sa_column=Column(String(32)),
+    )
     project_id: int = Field(foreign_key="sample_projects.id")
     assigned_to: int | None = Field(default=None, foreign_key="sample_users.id")
 
