@@ -96,7 +96,7 @@ services:
             - -c
             - |
                 NUM_OF_CPUS=$$(nproc --all)
-                NUM_OF_WORKERS=$((NUM_OF_CPUS * 2 + 1))
+                NUM_OF_WORKERS=$((NUM_OF_CPUS + 1))
                 echo "CPUs: $$NUM_OF_CPUS, Workers: $$NUM_OF_WORKERS"
                 python -c "import asyncio; from app.core.database import init_db; asyncio.run(init_db())"
                 export SKIP_DB_INIT=1

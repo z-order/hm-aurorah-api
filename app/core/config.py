@@ -48,10 +48,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3001",
         "http://hm-aurorah-api",
         "http://hm-aurorah-api:3000",
-        "http://dev.aurorah.ai",
         "https://dev.aurorah.ai",
-        "http://aurorah.ai",
+        "https://dev.aurorah.ai:33080",
         "https://aurorah.ai",
+        "https://aurorah.ai:33080",
+        "https://www.aurorah.ai",
+        "https://www.aurorah.ai:33080",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
