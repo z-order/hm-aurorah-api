@@ -5,17 +5,17 @@ services:
         container_name: hm-aurorah-minio
         restart: always
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            test: ["CMD", "curl", "-f", "http://localhost:39000/minio/health/live"]
             start_period: 5s
             interval: 300s
             timeout: 1s
             retries: 5
         ports:
-            - "9000:9000" # API
-            - "9001:9001" # Console
+            - "39000:39000" # API
+            - "39001:39001" # Console
         env_file:
             - .env.minio
-        command: server /data --console-address ":9001"
+        command: server /data --address ":39000" --console-address ":39001"
         volumes:
             - minio-data:/data
         networks:
