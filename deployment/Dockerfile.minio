@@ -1,0 +1,5 @@
+FROM minio/minio:latest
+
+# Remove the default EXPOSE 9000 by not declaring it
+# and only expose the custom ports
+EXPOSE 39000 39001

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.project import Project, ProjectCreate, ProjectRead, ProjectUpdate
+from app.models.zexample_project import Project, ProjectCreate, ProjectRead, ProjectUpdate
 
 router = APIRouter()
 

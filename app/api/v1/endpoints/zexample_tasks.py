@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.task import Task, TaskCreate, TaskRead, TaskUpdate
+from app.models.zexample_task import Task, TaskCreate, TaskRead, TaskUpdate
 
 router = APIRouter()
 

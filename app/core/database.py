@@ -4,6 +4,7 @@ Database configuration and session management
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import Table
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
@@ -65,20 +66,26 @@ async def init_db() -> None:
         # Import all models here to ensure they are registered with SQLModel
         from app.models.chatbot_message import ChatbotMessage
         from app.models.chatbot_task import ChatbotTask
-        from app.models.project import Project
-        from app.models.task import Task
-        from app.models.user import User
 
         _ = (
             ChatbotTask,
             ChatbotMessage,
-            User,
-            Project,
-            Task,
         )  # Reference to prevent auto-removal by mypy or pyright
 
-        # Create all tables (checkfirst=True is default, skips existing tables)
-        await conn.run_sync(SQLModel.metadata.create_all)
+        # Create only specific tables (others managed by SQL scripts)
+        tables_to_create: list[Table] = [
+            ChatbotTask.__table__,  # type: ignore[misc]
+            ChatbotMessage.__table__,  # type: ignore[misc]
+        ]
+
+        if tables_to_create:
+            await conn.run_sync(
+                lambda sync_conn: SQLModel.metadata.create_all(
+                    sync_conn,
+                    tables=tables_to_create,
+                    checkfirst=True,
+                )
+            )
 
 
 async def check_db_health() -> bool:

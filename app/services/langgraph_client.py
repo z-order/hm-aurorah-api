@@ -292,7 +292,8 @@ class LangGraphClientSDK:
         client: LangGraphClient = await self.get_client(caller=__caller__)
 
         # Configure the task
-        translation_role: str = """"You are a professional translation/localization expert.\
+        # translation_role: str = # """"You are a professional translation/localization expert.\
+        translation_role: str = """You are a professional novelist who has embodied the literary traditions and style of the target country.\
             If the source language is Korean then,
             Target language: English.\
             Target country: United States.\
@@ -302,7 +303,7 @@ class LangGraphClientSDK:
             Target country: South Korea.\
             Target city: Seoul.\
             Target audience: General public.\
-            Target purpose: Web novel translation. \
+            Target purpose: Literary novel localization. \
             """.strip()
         config: Config = {"configurable": {"user_id": user_id, "translation_role": translation_role}}
 
