@@ -75,11 +75,11 @@ CREATE INDEX IF NOT EXISTS idx_au_file_acl_principal_id ON au_file_acl(principal
 -- au_file_tasks
 CREATE TABLE IF NOT EXISTS au_file_tasks (
     file_id UUID NOT NULL,
-    file_preset_id UUID NOT NULL,
+    file_preset_id UUID NULL,
     original_id UUID NOT NULL,
-    translation_id_1st UUID NOT NULL,
-    translation_id_2nd UUID NOT NULL,
-    proofreading_id UUID NOT NULL,
+    translation_id_1st UUID NULL,
+    translation_id_2nd UUID NULL,
+    proofreading_id UUID NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );

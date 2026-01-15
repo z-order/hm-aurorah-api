@@ -21,7 +21,7 @@ SET search_path TO public;
 -- au_create_file_task() function
 CREATE OR REPLACE FUNCTION au_create_file_task(
   p_file_id UUID,
-  p_file_preset_id UUID,
+  p_file_preset_id UUID, -- can be NULL
   p_original_text JSONB
 )
 RETURNS TABLE (
@@ -173,6 +173,13 @@ RETURNS TABLE (
   translation_id_1st UUID,
   translation_id_2nd UUID,
   proofreading_id UUID,
+  file_type VARCHAR(32),
+  file_name VARCHAR(512),
+  file_url VARCHAR(1024),
+  file_ext VARCHAR(32),
+  file_size BIGINT,
+  mime_type VARCHAR(32),
+  description VARCHAR(512),
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -184,9 +191,11 @@ BEGIN
   SELECT t.file_id, t.file_preset_id, t.original_id,
          o.original_text, o.original_text_modified,
          t.translation_id_1st, t.translation_id_2nd, t.proofreading_id,
+         n.file_type, n.file_name, n.file_url, n.file_ext, n.file_size, n.mime_type, n.description,
          t.created_at, t.updated_at
   FROM au_file_tasks t
   LEFT JOIN au_file_original o ON o.original_id = t.original_id
+  LEFT JOIN au_file_nodes n ON n.file_id = t.file_id
   WHERE t.file_id = p_file_id;
 END;
 $$;

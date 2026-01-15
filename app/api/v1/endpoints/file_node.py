@@ -70,6 +70,7 @@ class FileGetOption(str, Enum):
     responses={
         404: {"description": "Parent folder not found"},
         409: {"description": "Folder/file name already exists"},
+        500: {"description": "Internal server error"},
     },
 )
 async def create_file_node(
@@ -149,6 +150,9 @@ async def create_file_node(
 @router.get(
     "/{owner_id}",
     response_model=list[FileNodeRead],
+    responses={
+        500: {"description": "Internal server error"},
+    },
 )
 async def get_file_nodes(
     owner_id: str,
@@ -215,6 +219,7 @@ async def get_file_nodes(
     responses={
         404: {"description": "File not found"},
         409: {"description": "Folder/file name already exists"},
+        500: {"description": "Internal server error"},
     },
 )
 async def update_file_node(
@@ -281,6 +286,7 @@ async def update_file_node(
     status_code=status.HTTP_200_OK,
     responses={
         404: {"description": "File not found"},
+        500: {"description": "Internal server error"},
     },
 )
 async def delete_file_node(
@@ -336,6 +342,7 @@ async def delete_file_node(
     status_code=status.HTTP_201_CREATED,
     responses={
         404: {"description": "File not found"},
+        500: {"description": "Internal server error"},
     },
 )
 async def duplicate_file_node(
@@ -391,6 +398,7 @@ async def duplicate_file_node(
     responses={
         404: {"description": "File not found / Parent folder not found"},
         409: {"description": "Folder/file name already exists"},
+        500: {"description": "Internal server error"},
     },
 )
 async def move_file_node(
