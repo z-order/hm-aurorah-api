@@ -122,7 +122,7 @@ async def get_file_checkpoint(
         result = await db.execute(
             text("""
                 SELECT checkpoint_id, file_id, history_id,
-                       original_text_modified, translation_text_modified, proofreaded_text,
+                       original_text_modified, translated_text_modified, proofreaded_text,
                        created_at
                 FROM au_get_file_checkpoint(:file_id, :checkpoint_id)
             """),
@@ -139,7 +139,7 @@ async def get_file_checkpoint(
                 "file_id": row.file_id,
                 "history_id": row.history_id,
                 "original_text_modified": row.original_text_modified,
-                "translated_text_modified": row.translation_text_modified,
+                "translated_text_modified": row.translated_text_modified,
                 "proofreaded_text": row.proofreaded_text,
                 "created_at": row.created_at,
             }

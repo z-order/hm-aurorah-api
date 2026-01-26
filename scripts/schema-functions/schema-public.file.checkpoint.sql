@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION au_create_file_checkpoint(
   p_file_id UUID,
   p_history_id UUID,
   p_original_text_modified JSONB DEFAULT NULL,
-  p_translation_text_modified JSONB DEFAULT NULL,
+  p_translated_text_modified JSONB DEFAULT NULL,
   p_proofreaded_text JSONB DEFAULT NULL
 )
 RETURNS TABLE (
@@ -65,13 +65,13 @@ BEGIN
     file_id,
     history_id,
     original_text_modified,
-    translation_text_modified,
+    translated_text_modified,
     proofreaded_text
   ) VALUES (
     p_file_id,
     p_history_id,
     p_original_text_modified,
-    p_translation_text_modified,
+    p_translated_text_modified,
     p_proofreaded_text
   )
   RETURNING au_file_checkpoint.checkpoint_id INTO v_checkpoint_id;
@@ -96,7 +96,7 @@ RETURNS TABLE (
   file_id UUID,
   history_id UUID,
   original_text_modified JSONB,
-  translation_text_modified JSONB,
+  translated_text_modified JSONB,
   proofreaded_text JSONB,
   created_at TIMESTAMPTZ
 )
@@ -108,7 +108,7 @@ BEGIN
     -- Get all checkpoints for the file
     RETURN QUERY
     SELECT c.checkpoint_id, c.file_id, c.history_id,
-           c.original_text_modified, c.translation_text_modified, c.proofreaded_text,
+           c.original_text_modified, c.translated_text_modified, c.proofreaded_text,
            c.created_at
     FROM au_file_checkpoint c
     WHERE c.file_id = p_file_id
@@ -117,7 +117,7 @@ BEGIN
     -- Get specific checkpoint
     RETURN QUERY
     SELECT c.checkpoint_id, c.file_id, c.history_id,
-           c.original_text_modified, c.translation_text_modified, c.proofreaded_text,
+           c.original_text_modified, c.translated_text_modified, c.proofreaded_text,
            c.created_at
     FROM au_file_checkpoint c
     WHERE c.file_id = p_file_id

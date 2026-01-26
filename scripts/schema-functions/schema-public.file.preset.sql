@@ -22,6 +22,9 @@ SET search_path TO public;
 CREATE OR REPLACE FUNCTION au_create_file_preset(
   p_principal_id UUID,
   p_description VARCHAR(128),
+  p_llm_model_id VARCHAR(64),
+  p_llm_model_temperature INT,
+  p_ai_agent_id VARCHAR(64), -- can be NULL, default is 'agent_translation_a1'
   p_translation_memory VARCHAR(256),
   p_translation_role TEXT,
   p_translation_rule TEXT,
@@ -45,6 +48,7 @@ DECLARE
 BEGIN
 
   -- Check if the preset with same description already exists for the principal
+  /* v2026.01.22: Skipping this check for now to allow multiple presets with the same description
   SELECT COUNT(*) INTO v_preset_count
   FROM au_file_presets
   WHERE au_file_presets.principal_id = p_principal_id
@@ -55,11 +59,15 @@ BEGIN
     RETURN QUERY SELECT 409, 'Preset with same description already exists'::TEXT, NULL::UUID;
     RETURN;
   END IF;
+  */
 
   -- Create the preset
   INSERT INTO au_file_presets (
     principal_id,
     description,
+    llm_model_id,
+    llm_model_temperature,
+    ai_agent_id,
     translation_memory,
     translation_role,
     translation_rule,
@@ -72,6 +80,9 @@ BEGIN
   ) VALUES (
     p_principal_id,
     p_description,
+    p_llm_model_id,
+    p_llm_model_temperature,
+    COALESCE(p_ai_agent_id, 'agent_translation_a1'),
     p_translation_memory,
     p_translation_role,
     p_translation_rule,
@@ -94,6 +105,9 @@ $$;
 CREATE OR REPLACE FUNCTION au_update_file_preset(
   p_file_preset_id UUID,
   p_description VARCHAR(128) DEFAULT NULL,
+  p_llm_model_id VARCHAR(64) DEFAULT NULL,
+  p_llm_model_temperature INT DEFAULT NULL,
+  p_ai_agent_id VARCHAR(64) DEFAULT NULL,
   p_translation_memory VARCHAR(256) DEFAULT NULL,
   p_translation_role TEXT DEFAULT NULL,
   p_translation_rule TEXT DEFAULT NULL,
@@ -131,6 +145,9 @@ BEGIN
   UPDATE au_file_presets
   SET
     description = COALESCE(p_description, description),
+    llm_model_id = COALESCE(p_llm_model_id, llm_model_id),
+    llm_model_temperature = COALESCE(p_llm_model_temperature, llm_model_temperature),
+    ai_agent_id = COALESCE(p_ai_agent_id, ai_agent_id),
     translation_memory = COALESCE(p_translation_memory, translation_memory),
     translation_role = COALESCE(p_translation_role, translation_role),
     translation_rule = COALESCE(p_translation_rule, translation_rule),
@@ -203,6 +220,9 @@ RETURNS TABLE (
   file_preset_id UUID,
   principal_id UUID,
   description VARCHAR(128),
+  llm_model_id VARCHAR(64),
+  llm_model_temperature INT,
+  ai_agent_id VARCHAR(64),
   translation_memory VARCHAR(256),
   translation_role TEXT,
   translation_rule TEXT,
@@ -222,9 +242,11 @@ BEGIN
   IF p_file_preset_id IS NULL THEN
     -- Get all presets for the principal
     RETURN QUERY
-    SELECT p.file_preset_id, p.principal_id, p.description, p.translation_memory,
-           p.translation_role, p.translation_rule, p.target_language, p.target_country,
-           p.target_city, p.task_type, p.audience, p.purpose, p.created_at, p.updated_at
+    SELECT p.file_preset_id, p.principal_id, p.description,
+           p.llm_model_id, p.llm_model_temperature, p.ai_agent_id,
+           p.translation_memory, p.translation_role, p.translation_rule,
+           p.target_language, p.target_country, p.target_city,
+           p.task_type, p.audience, p.purpose, p.created_at, p.updated_at
     FROM au_file_presets p
     WHERE p.principal_id = p_principal_id
       AND p.deleted_at IS NULL
@@ -232,9 +254,11 @@ BEGIN
   ELSE
     -- Get specific preset
     RETURN QUERY
-    SELECT p.file_preset_id, p.principal_id, p.description, p.translation_memory,
-           p.translation_role, p.translation_rule, p.target_language, p.target_country,
-           p.target_city, p.task_type, p.audience, p.purpose, p.created_at, p.updated_at
+    SELECT p.file_preset_id, p.principal_id, p.description,
+           p.llm_model_id, p.llm_model_temperature, p.ai_agent_id,
+           p.translation_memory, p.translation_role, p.translation_rule,
+           p.target_language, p.target_country, p.target_city,
+           p.task_type, p.audience, p.purpose, p.created_at, p.updated_at
     FROM au_file_presets p
     WHERE p.principal_id = p_principal_id
       AND p.file_preset_id = p_file_preset_id

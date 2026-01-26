@@ -29,9 +29,6 @@ class FileTranslationBase(SQLModel):
     file_preset_id: uuid.UUID = Field(foreign_key="public.au_file_presets.file_preset_id")
     file_preset_json: dict[str, Any] = Field(sa_column=Column(JSONB))
     assignee_id: uuid.UUID
-    llm_model_id: uuid.UUID
-    llm_model_temperature: int
-    agent_task_name: str = Field(default="task_translation_1st", max_length=256)
     translated_text: dict[str, Any] | None = Field(default=None, sa_column=Column(JSONB))
     translated_text_modified: dict[str, Any] | None = Field(default=None, sa_column=Column(JSONB))
 
@@ -61,9 +58,6 @@ class FileTranslationCreate(SQLModel):
     file_preset_id: uuid.UUID
     file_preset_json: dict[str, Any]
     assignee_id: uuid.UUID
-    llm_model_id: uuid.UUID
-    llm_model_temperature: int
-    agent_task_name: str = Field(default="task_translation_1st", max_length=256)
     translated_text: dict[str, Any] | None = None
 
 
@@ -95,9 +89,6 @@ class FileTranslationReadForListing(SQLModel):
     file_preset_id: uuid.UUID
     file_preset_json: dict[str, Any]
     assignee_id: uuid.UUID
-    llm_model_id: uuid.UUID
-    llm_model_temperature: int
-    agent_task_name: str
     created_at: datetime
     updated_at: datetime
 

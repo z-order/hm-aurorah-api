@@ -69,9 +69,6 @@ async def create_file_translation(
                     :file_preset_id,
                     :file_preset_json,
                     :assignee_id,
-                    :llm_model_id,
-                    :llm_model_temperature,
-                    :agent_task_name,
                     :translated_text
                 )
             """),
@@ -80,9 +77,6 @@ async def create_file_translation(
                 "file_preset_id": translation_data.file_preset_id,
                 "file_preset_json": translation_data.file_preset_json,
                 "assignee_id": translation_data.assignee_id,
-                "llm_model_id": translation_data.llm_model_id,
-                "llm_model_temperature": translation_data.llm_model_temperature,
-                "agent_task_name": translation_data.agent_task_name,
                 "translated_text": translation_data.translated_text,
             },
         )
@@ -140,8 +134,7 @@ async def get_file_translation_for_listing(
         result = await db.execute(
             text("""
                 SELECT translation_id, file_id, file_preset_id, file_preset_json,
-                       assignee_id, llm_model_id, llm_model_temperature, agent_task_name,
-                       created_at, updated_at
+                       assignee_id, created_at, updated_at
                 FROM au_get_file_translation_for_listing(:file_id, :translation_id)
             """),
             {
@@ -158,9 +151,6 @@ async def get_file_translation_for_listing(
                 "file_preset_id": row.file_preset_id,
                 "file_preset_json": row.file_preset_json,
                 "assignee_id": row.assignee_id,
-                "llm_model_id": row.llm_model_id,
-                "llm_model_temperature": row.llm_model_temperature,
-                "agent_task_name": row.agent_task_name,
                 "created_at": row.created_at,
                 "updated_at": row.updated_at,
             }
@@ -198,8 +188,8 @@ async def get_file_translation_for_jsonb(
         result = await db.execute(
             text("""
                 SELECT translation_id, file_id, file_preset_id, file_preset_json,
-                       assignee_id, llm_model_id, llm_model_temperature, agent_task_name,
-                       translation_text, translation_text_modified, created_at, updated_at
+                       assignee_id, translated_text, translated_text_modified,
+                       created_at, updated_at
                 FROM au_get_file_translation_for_jsonb(:file_id, :translation_id)
             """),
             {
@@ -216,11 +206,8 @@ async def get_file_translation_for_jsonb(
                 "file_preset_id": row.file_preset_id,
                 "file_preset_json": row.file_preset_json,
                 "assignee_id": row.assignee_id,
-                "llm_model_id": row.llm_model_id,
-                "llm_model_temperature": row.llm_model_temperature,
-                "agent_task_name": row.agent_task_name,
-                "translated_text": row.translation_text,
-                "translated_text_modified": row.translation_text_modified,
+                "translated_text": row.translated_text,
+                "translated_text_modified": row.translated_text_modified,
                 "created_at": row.created_at,
                 "updated_at": row.updated_at,
             }

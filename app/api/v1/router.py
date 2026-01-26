@@ -17,6 +17,8 @@ from app.api.v1.endpoints import (
     file_task,
     file_translation,
     message_queue,
+    system_ai_agent,
+    system_llm_model,
 )
 
 api_router = APIRouter()
@@ -34,3 +36,5 @@ api_router.include_router(file_translation.router, prefix="/file/translation", t
 api_router.include_router(chatbot.router, prefix="/chatbot", tags=["Chatbot"])
 api_router.include_router(chatbot_stream.router, prefix="/chatbot-stream", tags=["Chatbot Stream"])
 api_router.include_router(message_queue.router, prefix="/mq", tags=["Message Queue"])
+api_router.include_router(system_ai_agent.router, prefix="/system/ai-agent", tags=["System AI Agent"])
+api_router.include_router(system_llm_model.router, prefix="/system/llm-model", tags=["System LLM Model"])

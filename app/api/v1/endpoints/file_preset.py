@@ -59,6 +59,9 @@ async def create_file_preset(
                 FROM au_create_file_preset(
                     :principal_id,
                     :description,
+                    :llm_model_id,
+                    :llm_model_temperature,
+                    :ai_agent_id,
                     :translation_memory,
                     :translation_role,
                     :translation_rule,
@@ -73,6 +76,9 @@ async def create_file_preset(
             {
                 "principal_id": preset_data.principal_id,
                 "description": preset_data.description,
+                "llm_model_id": preset_data.llm_model_id,
+                "llm_model_temperature": preset_data.llm_model_temperature,
+                "ai_agent_id": preset_data.ai_agent_id,
                 "translation_memory": preset_data.translation_memory,
                 "translation_role": preset_data.translation_role,
                 "translation_rule": preset_data.translation_rule,
@@ -137,9 +143,11 @@ async def get_file_preset(
     try:
         result = await db.execute(
             text("""
-                SELECT file_preset_id, principal_id, description, translation_memory,
-                       translation_role, translation_rule, target_language, target_country,
-                       target_city, task_type, audience, purpose, created_at, updated_at
+                SELECT file_preset_id, principal_id, description,
+                       llm_model_id, llm_model_temperature, ai_agent_id,
+                       translation_memory, translation_role, translation_rule,
+                       target_language, target_country, target_city,
+                       task_type, audience, purpose, created_at, updated_at
                 FROM au_get_file_preset(:principal_id, :file_preset_id)
             """),
             {
@@ -154,6 +162,9 @@ async def get_file_preset(
                 "file_preset_id": row.file_preset_id,
                 "principal_id": row.principal_id,
                 "description": row.description,
+                "llm_model_id": row.llm_model_id,
+                "llm_model_temperature": row.llm_model_temperature,
+                "ai_agent_id": row.ai_agent_id,
                 "translation_memory": row.translation_memory,
                 "translation_role": row.translation_role,
                 "translation_rule": row.translation_rule,
@@ -201,6 +212,9 @@ async def update_file_preset(
                 FROM au_update_file_preset(
                     :file_preset_id,
                     :description,
+                    :llm_model_id,
+                    :llm_model_temperature,
+                    :ai_agent_id,
                     :translation_memory,
                     :translation_role,
                     :translation_rule,
@@ -215,6 +229,9 @@ async def update_file_preset(
             {
                 "file_preset_id": file_preset_id,
                 "description": preset_data.description,
+                "llm_model_id": preset_data.llm_model_id,
+                "llm_model_temperature": preset_data.llm_model_temperature,
+                "ai_agent_id": preset_data.ai_agent_id,
                 "translation_memory": preset_data.translation_memory,
                 "translation_role": preset_data.translation_role,
                 "translation_rule": preset_data.translation_rule,

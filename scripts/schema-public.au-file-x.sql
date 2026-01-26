@@ -93,6 +93,9 @@ CREATE TABLE IF NOT EXISTS au_file_presets (
     file_preset_id UUID NOT NULL DEFAULT uuidv7(),
     principal_id UUID NOT NULL,
     description VARCHAR(128) NOT NULL,
+    llm_model_id VARCHAR(64) NOT NULL,  -- au_system_llm_models.llm_model_id
+    llm_model_temperature INT NOT NULL,
+    ai_agent_id VARCHAR(64) NOT NULL DEFAULT 'agent_translation_a1',  -- au_system_ai_agents.ai_agent_id
     translation_memory VARCHAR(256) NULL,
     translation_role TEXT NULL,
     translation_rule TEXT NULL,
@@ -138,11 +141,8 @@ CREATE TABLE IF NOT EXISTS au_file_translation (
     file_preset_id UUID NOT NULL,
     file_preset_json JSON NOT NULL,
     assignee_id UUID NOT NULL,
-    llm_model_id UUID NOT NULL,
-    llm_model_temperature INT NOT NULL,
-    agent_task_name VARCHAR(256) NOT NULL DEFAULT 'task_translation_1st',
-    translation_text JSONB NULL,
-    translation_text_modified JSONB NULL,
+    translated_text JSONB NULL,
+    translated_text_modified JSONB NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     deleted_at TIMESTAMPTZ NULL
@@ -159,12 +159,12 @@ CREATE INDEX IF NOT EXISTS idx_au_file_translation_I1
     WITH (fillfactor=100);
 
 
--- au_file_proofreadming
+-- au_file_proofreading
 CREATE TABLE IF NOT EXISTS au_file_proofreading (
     proofreading_id UUID NOT NULL DEFAULT uuidv7(),
     file_id UUID NOT NULL,
-    assignee_id UUID NULL,  -- Reserverd for future use
-    participant_ids UUID[] NULL,  -- Reserverd for future use
+    assignee_id UUID NULL,  -- Reserved for future use
+    participant_ids UUID[] NULL,  -- Reserved for future use
     proofreaded_text JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS au_file_checkpoint (
     file_id UUID NOT NULL,
     history_id UUID NOT NULL,
     original_text_modified JSONB NULL,
-    translation_text_modified JSONB NULL,
+    translated_text_modified JSONB NULL,
     proofreaded_text JSONB NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );

@@ -24,6 +24,9 @@ class FilePresetBase(SQLModel):
 
     principal_id: uuid.UUID = Field(index=True)
     description: str = Field(max_length=128)
+    llm_model_id: str = Field(max_length=64)
+    llm_model_temperature: int
+    ai_agent_id: str = Field(default="agent_translation_a1", max_length=64)
     translation_memory: str | None = Field(default=None, max_length=256)
     translation_role: str | None = Field(default=None)
     translation_rule: str | None = Field(default=None)
@@ -58,6 +61,9 @@ class FilePresetCreate(SQLModel):
 
     principal_id: uuid.UUID
     description: str = Field(min_length=1, max_length=128)
+    llm_model_id: str = Field(min_length=1, max_length=64)
+    llm_model_temperature: int
+    ai_agent_id: str | None = Field(default="agent_translation_a1", max_length=64)
     translation_memory: str | None = Field(default=None, max_length=256)
     translation_role: str | None = None
     translation_rule: str | None = None
@@ -80,6 +86,9 @@ class FilePresetUpdate(SQLModel):
 
     file_preset_id: uuid.UUID
     description: str | None = Field(default=None, max_length=128)
+    llm_model_id: str | None = Field(default=None, max_length=64)
+    llm_model_temperature: int | None = None
+    ai_agent_id: str | None = Field(default=None, max_length=64)
     translation_memory: str | None = Field(default=None, max_length=256)
     translation_role: str | None = None
     translation_rule: str | None = None

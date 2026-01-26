@@ -24,10 +24,7 @@ CREATE OR REPLACE FUNCTION au_create_file_translation(
   p_file_preset_id UUID,
   p_file_preset_json JSON,
   p_assignee_id UUID,
-  p_llm_model_id UUID,
-  p_llm_model_temperature INT,
-  p_agent_task_name VARCHAR(256) DEFAULT 'task_translation_1st',
-  p_translation_text JSONB DEFAULT NULL
+  p_translated_text JSONB DEFAULT NULL
 )
 RETURNS TABLE (
   status INT,
@@ -58,19 +55,13 @@ BEGIN
     file_preset_id,
     file_preset_json,
     assignee_id,
-    llm_model_id,
-    llm_model_temperature,
-    agent_task_name,
-    translation_text
+    translated_text
   ) VALUES (
     p_file_id,
     p_file_preset_id,
     p_file_preset_json,
     p_assignee_id,
-    p_llm_model_id,
-    p_llm_model_temperature,
-    COALESCE(p_agent_task_name, 'task_translation_1st'),
-    p_translation_text
+    p_translated_text
   )
   RETURNING au_file_translation.translation_id INTO v_translation_id;
 
@@ -83,8 +74,8 @@ $$;
 -- au_update_file_translation() function
 CREATE OR REPLACE FUNCTION au_update_file_translation(
   p_translation_id UUID,
-  p_translation_text JSONB DEFAULT NULL,
-  p_translation_text_modified JSONB DEFAULT NULL
+  p_translated_text JSONB DEFAULT NULL,
+  p_translated_text_modified JSONB DEFAULT NULL
 )
 RETURNS TABLE (
   status INT,
@@ -99,8 +90,8 @@ BEGIN
   -- Update the translation
   UPDATE au_file_translation
   SET
-    translation_text = COALESCE(p_translation_text, translation_text),
-    translation_text_modified = COALESCE(p_translation_text_modified, translation_text_modified),
+    translated_text = COALESCE(p_translated_text, translated_text),
+    translated_text_modified = COALESCE(p_translated_text_modified, translated_text_modified),
     updated_at = now()
   WHERE au_file_translation.translation_id = p_translation_id
     AND deleted_at IS NULL;
@@ -166,9 +157,6 @@ RETURNS TABLE (
   file_preset_id UUID,
   file_preset_json JSON,
   assignee_id UUID,
-  llm_model_id UUID,
-  llm_model_temperature INT,
-  agent_task_name VARCHAR(256),
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -180,8 +168,7 @@ BEGIN
     -- Get all translations for the file
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.llm_model_id, t.llm_model_temperature, t.agent_task_name,
-           t.created_at, t.updated_at
+           t.assignee_id, t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.deleted_at IS NULL
@@ -190,8 +177,7 @@ BEGIN
     -- Get specific translation
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.llm_model_id, t.llm_model_temperature, t.agent_task_name,
-           t.created_at, t.updated_at
+           t.assignee_id, t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.translation_id = p_translation_id
@@ -216,11 +202,8 @@ RETURNS TABLE (
   file_preset_id UUID,
   file_preset_json JSON,
   assignee_id UUID,
-  llm_model_id UUID,
-  llm_model_temperature INT,
-  agent_task_name VARCHAR(256),
-  translation_text JSONB,
-  translation_text_modified JSONB,
+  translated_text JSONB,
+  translated_text_modified JSONB,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -232,8 +215,8 @@ BEGIN
     -- Get all translations for the file
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.llm_model_id, t.llm_model_temperature, t.agent_task_name,
-           t.translation_text, t.translation_text_modified, t.created_at, t.updated_at
+           t.assignee_id, t.translated_text, t.translated_text_modified,
+           t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.deleted_at IS NULL
@@ -242,8 +225,8 @@ BEGIN
     -- Get specific translation
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.llm_model_id, t.llm_model_temperature, t.agent_task_name,
-           t.translation_text, t.translation_text_modified, t.created_at, t.updated_at
+           t.assignee_id, t.translated_text, t.translated_text_modified,
+           t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.translation_id = p_translation_id

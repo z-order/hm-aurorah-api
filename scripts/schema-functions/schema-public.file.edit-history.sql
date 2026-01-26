@@ -40,7 +40,7 @@ DECLARE
   v_history_id UUID;
   v_last_checkpoint_at TIMESTAMPTZ;
   v_original_text_modified JSONB;
-  v_translation_text_modified JSONB;
+  v_translated_text_modified JSONB;
   v_proofreaded_text JSONB;
 BEGIN
 
@@ -77,8 +77,8 @@ BEGIN
   -- Create checkpoint if no recent checkpoint exists
   IF v_last_checkpoint_at IS NULL THEN
     -- Get current modified texts from related tables in a single query
-    SELECT o.original_text_modified, t.translation_text_modified, pr.proofreaded_text
-    INTO v_original_text_modified, v_translation_text_modified, v_proofreaded_text
+    SELECT o.original_text_modified, t.translated_text_modified, pr.proofreaded_text
+    INTO v_original_text_modified, v_translated_text_modified, v_proofreaded_text
     FROM au_file_tasks tk
     LEFT JOIN au_file_original o ON o.original_id = tk.original_id
     LEFT JOIN au_file_translation t ON t.translation_id = tk.translation_id_1st
@@ -90,7 +90,7 @@ BEGIN
       p_file_id,
       v_history_id,
       v_original_text_modified,
-      v_translation_text_modified,
+      v_translated_text_modified,
       v_proofreaded_text
     );
   END IF;
