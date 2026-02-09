@@ -97,7 +97,7 @@ async def bg_atask_create_file_translation(
         original_text: dict[str, Any] = original_data.get("original_text", {})
 
         # -------------------------------------------------------------------------
-        # STEP 4: Build translation prompt
+        # STEP 4: Build translation prompt & set base roles
         # -------------------------------------------------------------------------
         prompt = _build_translation_prompt(original_text)
 
@@ -106,7 +106,25 @@ async def bg_atask_create_file_translation(
         translation_role: str | None = preset_data.get("translation_role")
         translation_rules: str | None = preset_data.get("translation_rule")
         llm_model_id: str | None = preset_data.get("llm_model_id")
-        llm_model_temperature: float | None = preset_data.get("llm_model_temperature")
+        target_language: str | None = preset_data.get("target_language")
+        target_country: str | None = preset_data.get("target_country")
+        target_city: str | None = preset_data.get("target_city")
+        audience: str | None = preset_data.get("audience")
+        purpose: str | None = preset_data.get("purpose")
+        _raw_temp = preset_data.get("llm_model_temperature")
+        llm_model_temperature: float | None = float(_raw_temp) if _raw_temp is not None else None
+
+        base_role = (
+            f"Your base role is a professional translator and localizer who is fluent in the source and target languages. "
+            f"Target language: {target_language}. "
+            f"Target country: {target_country}. "
+            f"Target city: {target_city}. (If empty, the target city is set to the capital city of the target country) "
+            f"Target audience: {audience}. "
+            f"Purpose of the translation/localization: {purpose}. "
+        )
+        translation_role = (
+            f"{base_role}\n\n{'And your additional role is: ' + translation_role}" if translation_role else base_role
+        )
 
         # -------------------------------------------------------------------------
         # STEP 5: Update database status to "in_progress"
@@ -335,7 +353,7 @@ async def _get_original_text(file_id: uuid.UUID) -> dict[str, Any] | None:
 
 def _build_translation_prompt(original_text: dict[str, Any]) -> str:
     """
-    Build the translation prompt from original text.
+    Build the translation prompt from original text using ┼N┼ markers.
 
     The original_text is expected to be a JSONB with segments structure:
     {
@@ -346,14 +364,22 @@ def _build_translation_prompt(original_text: dict[str, Any]) -> str:
         ]
     }
 
+    Converts segments JSON into marker-delimited format:
+        ┼1┼First sentence. ┼2┼Second sentence. ┼3┼Third sentence. ...
+
     Args:
         original_text: Original text as segments dictionary
 
     Returns:
-        Original text as JSON string for the AI agent prompt
+        Marker-delimited text string for the AI agent prompt
     """
-    # Return original_text as JSON string
-    return json.dumps(original_text, ensure_ascii=False)
+    segments = original_text.get("segments", [])
+    parts: list[str] = []
+    for seg in segments:
+        sid = seg.get("sid", 0)
+        text = seg.get("text", "")
+        parts.append(f"┼{sid}┼{text}")
+    return " ".join(parts)
 
 
 # =============================================================================

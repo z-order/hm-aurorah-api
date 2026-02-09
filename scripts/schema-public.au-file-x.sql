@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS au_file_presets (
     principal_id UUID NOT NULL,
     description VARCHAR(128) NOT NULL,
     llm_model_id VARCHAR(64) NOT NULL,  -- au_system_llm_models.llm_model_id
-    llm_model_temperature INT NOT NULL,
+    llm_model_temperature NUMERIC(3,2) NOT NULL CHECK (llm_model_temperature >= 0 AND llm_model_temperature <= 1),
     ai_agent_id VARCHAR(64) NOT NULL DEFAULT 'agent_translation_a1',  -- au_system_ai_agents.ai_agent_id
     translation_memory VARCHAR(256) NULL,
     translation_role TEXT NULL,

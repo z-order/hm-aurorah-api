@@ -175,6 +175,9 @@ RETURNS TABLE (
   file_preset_id UUID,
   file_preset_json JSON,
   assignee_id UUID,
+  ai_agent_data JSON,
+  status VARCHAR(32),
+  message TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -186,7 +189,8 @@ BEGIN
     -- Get all translations for the file
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.created_at, t.updated_at
+           t.assignee_id, t.ai_agent_data, t.status, t.message,
+           t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.deleted_at IS NULL
@@ -195,7 +199,8 @@ BEGIN
     -- Get specific translation
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
-           t.assignee_id, t.created_at, t.updated_at
+           t.assignee_id, t.ai_agent_data, t.status, t.message,
+           t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
       AND t.translation_id = p_translation_id
@@ -222,6 +227,9 @@ RETURNS TABLE (
   assignee_id UUID,
   translated_text JSONB,
   translated_text_modified JSONB,
+  ai_agent_data JSON,
+  status VARCHAR(32),
+  message TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -234,6 +242,7 @@ BEGIN
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
            t.assignee_id, t.translated_text, t.translated_text_modified,
+           t.ai_agent_data, t.status, t.message,
            t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id
@@ -244,6 +253,7 @@ BEGIN
     RETURN QUERY
     SELECT t.translation_id, t.file_id, t.file_preset_id, t.file_preset_json,
            t.assignee_id, t.translated_text, t.translated_text_modified,
+           t.ai_agent_data, t.status, t.message,
            t.created_at, t.updated_at
     FROM au_file_translation t
     WHERE t.file_id = p_file_id

@@ -90,6 +90,9 @@ class FileTranslationReadForListing(SQLModel):
     file_preset_id: uuid.UUID
     file_preset_json: dict[str, Any]
     assignee_id: uuid.UUID
+    ai_agent_data: dict[str, Any] | None = None
+    status: str = "ready"
+    message: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -98,5 +101,8 @@ class FileTranslationReadForJsonb(FileTranslationBase):
     """Schema for reading a file translation (with jsonb)"""
 
     translation_id: uuid.UUID
+    ai_agent_data: dict[str, Any] | None = None
+    status: str = "ready"
+    message: str | None = None
     created_at: datetime
     updated_at: datetime

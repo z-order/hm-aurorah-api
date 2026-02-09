@@ -185,11 +185,15 @@ class TranslationChunkCollector(LangGraphChunkCollector):
         content_to_parse = self._extract_translated_text_content()
 
         # ---------------------------------------------------------------------
-        # STEP 3: Use analyze_raw_text_to_json() to parse ┼N┼ markers
-        # This function handles the marker parsing and returns segments format
+        # STEP 3: Try JSON parse first (AI may return JSON with segments),
+        #         then fall back to ┼N┼ marker parsing
         # ---------------------------------------------------------------------
-        segments_data = analyze_raw_text_to_json(content_to_parse)
-        translated_text["segments"] = segments_data.get("segments", [])
+        json_segments = self._try_parse_json_segments(content_to_parse)
+        if json_segments is not None:
+            translated_text["segments"] = json_segments
+        else:
+            segments_data = analyze_raw_text_to_json(content_to_parse)
+            translated_text["segments"] = segments_data.get("segments", [])
 
         # Log success
         segments_count = len(translated_text.get("segments", []))
@@ -266,6 +270,52 @@ class TranslationChunkCollector(LangGraphChunkCollector):
                     return metadata
             except json.JSONDecodeError as e:
                 logger.warning(f"Failed to parse metadata JSON: {e}")
+
+        return None
+
+    def _try_parse_json_segments(self, content: str) -> list[dict[str, Any]] | None:
+        """
+        Try to parse content as JSON with a segments array.
+
+        The AI agent may return translation as a JSON object:
+        {"segments": [{"sid": 1, "text": "..."}, ...]}
+
+        or
+
+        <translated_text> ┼1┼First translated sentence.┼2┼Second sentence... </translated_text>
+
+        If content is valid JSON with segments, return the segment list directly.
+        Otherwise return None so the caller falls back to ┼N┼ marker parsing.
+
+        Returns:
+            List of segment dicts if valid JSON with segments, else None
+        """
+        stripped = content.strip()
+        if not stripped.startswith("{"):
+            # return None so the caller falls back to ┼N┼ marker parsing
+            return None
+
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            return None
+
+        if not isinstance(parsed, dict):
+            return None
+
+        segments = parsed.get("segments")  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        if not isinstance(segments, list) or len(segments) == 0:  # pyright: ignore[reportUnknownArgumentType]
+            return None
+
+        # Validate segment structure
+        valid: list[dict[str, Any]] = []
+        for seg in segments:  # pyright: ignore[reportUnknownVariableType]
+            if isinstance(seg, dict) and "sid" in seg and "text" in seg:
+                valid.append({"sid": seg["sid"], "text": str(seg["text"])})  # pyright: ignore[reportUnknownArgumentType]
+
+        if valid:
+            logger.info(f"Parsed {len(valid)} segments from JSON response (direct)")
+            return valid
 
         return None
 

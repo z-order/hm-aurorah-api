@@ -162,7 +162,8 @@ async def get_file_translation_for_listing(
         result = await db.execute(
             text("""
                 SELECT translation_id, file_id, file_preset_id, file_preset_json,
-                       assignee_id, created_at, updated_at
+                       assignee_id, ai_agent_data, status, message,
+                       created_at, updated_at
                 FROM au_get_file_translation_for_listing(:file_id, :translation_id)
             """),
             {
@@ -179,6 +180,9 @@ async def get_file_translation_for_listing(
                 "file_preset_id": row.file_preset_id,
                 "file_preset_json": row.file_preset_json,
                 "assignee_id": row.assignee_id,
+                "ai_agent_data": row.ai_agent_data,
+                "status": row.status,
+                "message": row.message,
                 "created_at": row.created_at,
                 "updated_at": row.updated_at,
             }
@@ -217,6 +221,7 @@ async def get_file_translation_for_jsonb(
             text("""
                 SELECT translation_id, file_id, file_preset_id, file_preset_json,
                        assignee_id, translated_text, translated_text_modified,
+                       ai_agent_data, status, message,
                        created_at, updated_at
                 FROM au_get_file_translation_for_jsonb(:file_id, :translation_id)
             """),
@@ -236,6 +241,9 @@ async def get_file_translation_for_jsonb(
                 "assignee_id": row.assignee_id,
                 "translated_text": row.translated_text,
                 "translated_text_modified": row.translated_text_modified,
+                "ai_agent_data": row.ai_agent_data,
+                "status": row.status,
+                "message": row.message,
                 "created_at": row.created_at,
                 "updated_at": row.updated_at,
             }
