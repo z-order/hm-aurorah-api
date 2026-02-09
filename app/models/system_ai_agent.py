@@ -3,11 +3,11 @@ System AI agent model
 
 SQL Function                                    Model Schema
 ----------------------------------------------  ----------------------------------------------
-au_system_upsert_ai_agent                       SystemAiAgentUpsert
-au_system_create_ai_agent                       SystemAiAgentCreate
-au_system_update_ai_agent                       SystemAiAgentUpdate
-au_system_delete_ai_agent                       SystemAiAgentDelete
-au_system_get_ai_agent                          SystemAiAgentRead
+au_system_upsert_ai_agent                       SystemAIAgentUpsert
+au_system_create_ai_agent                       SystemAIAgentCreate
+au_system_update_ai_agent                       SystemAIAgentUpdate
+au_system_delete_ai_agent                       SystemAIAgentDelete
+au_system_get_ai_agent                          SystemAIAgentRead
 
 See: scripts/schema-functions/schema-public.system.ai-agent.sql
 """
@@ -18,7 +18,7 @@ from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 
 
-class SystemAiAgentBase(SQLModel):
+class SystemAIAgentBase(SQLModel):
     """Base system AI agent model"""
 
     ai_agent_id: str = Field(max_length=64, primary_key=True)
@@ -28,7 +28,7 @@ class SystemAiAgentBase(SQLModel):
     description: str | None = Field(default=None, max_length=512)
 
 
-class SystemAiAgent(SystemAiAgentBase, table=True):
+class SystemAIAgent(SystemAIAgentBase, table=True):
     """System AI agent database model"""
 
     __tablename__ = "au_system_ai_agents"  # type: ignore[assignment]
@@ -45,7 +45,7 @@ class SystemAiAgent(SystemAiAgentBase, table=True):
     deleted_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), index=True))
 
 
-class SystemAiAgentUpsert(SQLModel):
+class SystemAIAgentUpsert(SQLModel):
     """Schema for upserting a system AI agent"""
 
     ai_agent_id: str = Field(min_length=1, max_length=64)
@@ -55,7 +55,7 @@ class SystemAiAgentUpsert(SQLModel):
     description: str | None = Field(default=None, max_length=512)
 
 
-class SystemAiAgentCreate(SQLModel):
+class SystemAIAgentCreate(SQLModel):
     """Schema for creating a system AI agent"""
 
     ai_agent_id: str = Field(min_length=1, max_length=64)
@@ -65,7 +65,7 @@ class SystemAiAgentCreate(SQLModel):
     description: str | None = Field(default=None, max_length=512)
 
 
-class SystemAiAgentUpdate(SQLModel):
+class SystemAIAgentUpdate(SQLModel):
     """Schema for updating a system AI agent"""
 
     ai_agent_id: str = Field(min_length=1, max_length=64)
@@ -75,13 +75,13 @@ class SystemAiAgentUpdate(SQLModel):
     description: str | None = Field(default=None, max_length=512)
 
 
-class SystemAiAgentDelete(SQLModel):
+class SystemAIAgentDelete(SQLModel):
     """Schema for deleting a system AI agent"""
 
     ai_agent_id: str = Field(min_length=1, max_length=64)
 
 
-class SystemAiAgentRead(SystemAiAgentBase):
+class SystemAIAgentRead(SystemAIAgentBase):
     """Schema for reading a system AI agent"""
 
     created_at: datetime

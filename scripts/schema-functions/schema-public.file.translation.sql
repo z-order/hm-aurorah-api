@@ -35,6 +35,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_file_count INT;
+  v_file_preset_count INT;
   v_translation_id UUID;
 BEGIN
 
@@ -46,6 +47,17 @@ BEGIN
 
   IF v_file_count = 0 THEN
     RETURN QUERY SELECT 404, 'File not found'::TEXT, NULL::UUID;
+    RETURN;
+  END IF;
+  
+  -- Check if the file preset exists
+  SELECT COUNT(*) INTO v_file_preset_count
+  FROM au_file_presets
+  WHERE au_file_presets.file_preset_id = p_file_preset_id
+    AND deleted_at IS NULL;
+
+  IF v_file_preset_count = 0 THEN
+    RETURN QUERY SELECT 404, 'File preset not found'::TEXT, NULL::UUID;
     RETURN;
   END IF;
 
@@ -75,7 +87,10 @@ $$;
 CREATE OR REPLACE FUNCTION au_update_file_translation(
   p_translation_id UUID,
   p_translated_text JSONB DEFAULT NULL,
-  p_translated_text_modified JSONB DEFAULT NULL
+  p_translated_text_modified JSONB DEFAULT NULL,
+  p_ai_agent_data JSON DEFAULT NULL,
+  p_status VARCHAR(32) DEFAULT NULL,
+  p_message TEXT DEFAULT NULL
 )
 RETURNS TABLE (
   status INT,
@@ -90,11 +105,14 @@ BEGIN
   -- Update the translation
   UPDATE au_file_translation
   SET
-    translated_text = COALESCE(p_translated_text, translated_text),
-    translated_text_modified = COALESCE(p_translated_text_modified, translated_text_modified),
+    translated_text = COALESCE(p_translated_text, au_file_translation.translated_text),
+    translated_text_modified = COALESCE(p_translated_text_modified, au_file_translation.translated_text_modified),
+    ai_agent_data = COALESCE(p_ai_agent_data, au_file_translation.ai_agent_data),
+    status = COALESCE(p_status, au_file_translation.status),
+    message = COALESCE(p_message, au_file_translation.message),
     updated_at = now()
   WHERE au_file_translation.translation_id = p_translation_id
-    AND deleted_at IS NULL;
+    AND au_file_translation.deleted_at IS NULL;
 
   -- Set v_updated to TRUE if row was updated, FALSE otherwise
   v_updated := FOUND;

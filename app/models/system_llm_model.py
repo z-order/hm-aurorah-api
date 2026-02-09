@@ -3,11 +3,11 @@ System LLM model
 
 SQL Function                                    Model Schema
 ----------------------------------------------  ----------------------------------------------
-au_system_upsert_llm_model                      SystemLlmModelUpsert
-au_system_create_llm_model                      SystemLlmModelCreate
-au_system_update_llm_model                      SystemLlmModelUpdate
-au_system_delete_llm_model                      SystemLlmModelDelete
-au_system_get_llm_model                         SystemLlmModelRead
+au_system_upsert_llm_model                      SystemLLMModelUpsert
+au_system_create_llm_model                      SystemLLMModelCreate
+au_system_update_llm_model                      SystemLLMModelUpdate
+au_system_delete_llm_model                      SystemLLMModelDelete
+au_system_get_llm_model                         SystemLLMModelRead
 
 See: scripts/schema-functions/schema-public.system.llm-model.sql
 """
@@ -18,7 +18,7 @@ from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 
 
-class SystemLlmModelBase(SQLModel):
+class SystemLLMModelBase(SQLModel):
     """Base system LLM model"""
 
     llm_model_id: str = Field(max_length=64, primary_key=True)
@@ -29,7 +29,7 @@ class SystemLlmModelBase(SQLModel):
     provider: str = Field(max_length=64)
 
 
-class SystemLlmModel(SystemLlmModelBase, table=True):
+class SystemLLMModel(SystemLLMModelBase, table=True):
     """System LLM model database model"""
 
     __tablename__ = "au_system_llm_models"  # type: ignore[assignment]
@@ -46,7 +46,7 @@ class SystemLlmModel(SystemLlmModelBase, table=True):
     deleted_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), index=True))
 
 
-class SystemLlmModelUpsert(SQLModel):
+class SystemLLMModelUpsert(SQLModel):
     """Schema for upserting a system LLM model"""
 
     llm_model_id: str = Field(min_length=1, max_length=64)
@@ -57,7 +57,7 @@ class SystemLlmModelUpsert(SQLModel):
     provider: str = Field(min_length=1, max_length=64)
 
 
-class SystemLlmModelCreate(SQLModel):
+class SystemLLMModelCreate(SQLModel):
     """Schema for creating a system LLM model"""
 
     llm_model_id: str = Field(min_length=1, max_length=64)
@@ -68,7 +68,7 @@ class SystemLlmModelCreate(SQLModel):
     provider: str = Field(min_length=1, max_length=64)
 
 
-class SystemLlmModelUpdate(SQLModel):
+class SystemLLMModelUpdate(SQLModel):
     """Schema for updating a system LLM model"""
 
     llm_model_id: str = Field(min_length=1, max_length=64)
@@ -79,13 +79,13 @@ class SystemLlmModelUpdate(SQLModel):
     provider: str | None = Field(default=None, max_length=64)
 
 
-class SystemLlmModelDelete(SQLModel):
+class SystemLLMModelDelete(SQLModel):
     """Schema for deleting a system LLM model"""
 
     llm_model_id: str = Field(min_length=1, max_length=64)
 
 
-class SystemLlmModelRead(SystemLlmModelBase):
+class SystemLLMModelRead(SystemLLMModelBase):
     """Schema for reading a system LLM model"""
 
     created_at: datetime

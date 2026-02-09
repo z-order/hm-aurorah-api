@@ -30,10 +30,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.models.system_ai_agent import (
-    SystemAiAgentCreate,
-    SystemAiAgentRead,
-    SystemAiAgentUpdate,
-    SystemAiAgentUpsert,
+    SystemAIAgentCreate,
+    SystemAIAgentRead,
+    SystemAIAgentUpdate,
+    SystemAIAgentUpsert,
 )
 
 logger = get_logger(__name__, logging.INFO)
@@ -43,6 +43,7 @@ router: APIRouter = APIRouter()
 
 @router.post(
     "/upsert",
+    summary="Upsert AI Agent",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "AI agent updated or already exists"},
@@ -51,7 +52,7 @@ router: APIRouter = APIRouter()
     },
 )
 async def upsert_ai_agent(
-    agent_data: SystemAiAgentUpsert,
+    agent_data: SystemAIAgentUpsert,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -108,6 +109,7 @@ async def upsert_ai_agent(
 
 @router.post(
     "/",
+    summary="Create AI Agent",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "AI agent created"},
@@ -116,7 +118,7 @@ async def upsert_ai_agent(
     },
 )
 async def create_ai_agent(
-    agent_data: SystemAiAgentCreate,
+    agent_data: SystemAIAgentCreate,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -171,7 +173,8 @@ async def create_ai_agent(
 
 @router.get(
     "/",
-    response_model=list[SystemAiAgentRead],
+    summary="Get AI Agent",
+    response_model=list[SystemAIAgentRead],
     responses={
         500: {"description": "Internal server error"},
     },
@@ -222,6 +225,7 @@ async def get_ai_agent(
 
 @router.put(
     "/{ai_agent_id}",
+    summary="Update AI Agent",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "AI agent updated"},
@@ -231,7 +235,7 @@ async def get_ai_agent(
 )
 async def update_ai_agent(
     ai_agent_id: str,
-    agent_data: SystemAiAgentUpdate,
+    agent_data: SystemAIAgentUpdate,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -286,6 +290,7 @@ async def update_ai_agent(
 
 @router.delete(
     "/{ai_agent_id}",
+    summary="Delete AI Agent",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "AI agent deleted"},

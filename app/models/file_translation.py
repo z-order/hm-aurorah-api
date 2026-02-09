@@ -65,6 +65,7 @@ class FileTranslationCreateResponse(SQLModel):
     """Schema for creating a file translation response"""
 
     translation_id: uuid.UUID
+    rsmq_channel_id: str
 
 
 class FileTranslationUpdate(SQLModel):

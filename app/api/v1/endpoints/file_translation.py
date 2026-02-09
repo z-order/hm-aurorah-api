@@ -11,7 +11,7 @@ DELETE /{translation_id}          au_delete_file_translation()
 
 SQL Function                            Status Codes
 --------------------------------------  --------------------------
-au_create_file_translation              200(OK), 404(Not Found)
+au_create_file_translation              200(OK), 404(File not found), 404(File preset not found)
 au_update_file_translation              200(OK), 404(Not Found)
 au_delete_file_translation              200(OK), 404(Not Found)
 au_get_file_translation_for_listing     (no status, returns rows)
@@ -20,13 +20,15 @@ au_get_file_translation_for_jsonb       (no status, returns rows)
 See: scripts/schema-functions/schema-public.file.translation.sql
 """
 
+import json
 import logging
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid_utils import uuid7
 
 from app.core.database import get_db
 from app.core.logger import get_logger
@@ -38,6 +40,8 @@ from app.models.file_translation import (
     FileTranslationUpdate,
 )
 
+from .file_translation_task import bg_atask_create_file_translation
+
 logger = get_logger(__name__, logging.INFO)
 
 router: APIRouter = APIRouter()
@@ -48,11 +52,12 @@ router: APIRouter = APIRouter()
     response_model=FileTranslationCreateResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
-        404: {"description": "File not found"},
+        404: {"description": "File or file preset not found"},
         500: {"description": "Internal server error"},
     },
 )
 async def create_file_translation(
+    background_tasks: BackgroundTasks,
     translation_data: FileTranslationCreate,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -75,9 +80,13 @@ async def create_file_translation(
             {
                 "file_id": translation_data.file_id,
                 "file_preset_id": translation_data.file_preset_id,
-                "file_preset_json": translation_data.file_preset_json,
+                "file_preset_json": json.dumps(translation_data.file_preset_json),
                 "assignee_id": translation_data.assignee_id,
-                "translated_text": translation_data.translated_text,
+                "translated_text": (
+                    json.dumps(translation_data.translated_text)
+                    if translation_data.translated_text
+                    else None
+                ),
             },
         )
         row = result.fetchone()
@@ -96,7 +105,26 @@ async def create_file_translation(
                 detail=row.message,
             )
 
-        return {"translation_id": row.translation_id}
+        # Create a rsmq_channel_id for the Redis Stream Message Queue
+        rsmq_channel_id = str(uuid7())
+
+        # Create a background task to call the LangGraph AI Agent to translate the file.
+        # Use BackgroundTasks instead of asyncio.create_task() to avoid Redis async timeout
+        # (create_task loses context when request ends, causing async operations to fail)
+        # Note: BackgroundTasks runs AFTER the response is sent, so we return immediately.
+        # The client should subscribe to SSE using rsmq_channel_id to receive updates.
+        background_tasks.add_task(
+            bg_atask_create_file_translation,
+            rsmq_channel_id=rsmq_channel_id,
+            translation_id=row.translation_id,
+            translation_data=translation_data,
+        )
+
+        # Return the translation_id, rsmq_channel_id
+        return {
+            "translation_id": row.translation_id,
+            "rsmq_channel_id": rsmq_channel_id,
+        }
 
     except HTTPException:
         await db.rollback()
@@ -251,8 +279,16 @@ async def update_file_translation(
             """),
             {
                 "translation_id": translation_id,
-                "translated_text": translation_data.translated_text,
-                "translated_text_modified": translation_data.translated_text_modified,
+                "translated_text": (
+                    json.dumps(translation_data.translated_text)
+                    if translation_data.translated_text
+                    else None
+                ),
+                "translated_text_modified": (
+                    json.dumps(translation_data.translated_text_modified)
+                    if translation_data.translated_text_modified
+                    else None
+                ),
             },
         )
         row = result.fetchone()

@@ -143,6 +143,9 @@ CREATE TABLE IF NOT EXISTS au_file_translation (
     assignee_id UUID NOT NULL,
     translated_text JSONB NULL,
     translated_text_modified JSONB NULL,
+    ai_agent_data JSON NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'ready',
+    message TEXT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     deleted_at TIMESTAMPTZ NULL

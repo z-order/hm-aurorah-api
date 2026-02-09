@@ -120,8 +120,31 @@ logger = get_logger(__name__, logging.DEBUG)
 class AssistantID(str, Enum):
     """Assistant ID"""
 
+    # For Chatbot Task
     TASK_ASSISTANT = "task_assistant"
     TASK_TRANSLATION = "task_translation"
+    # For File Translation Task
+    TASK_TRANSLATION_A1 = "task_translation_a1"
+    TASK_TRANSLATION_A2 = "task_translation_a2"
+
+    @classmethod
+    def from_agent_id(cls, ai_agent_id: str) -> "AssistantID":
+        """
+        Convert ai_agent_id string to AssistantID enum.
+
+        Args:
+            ai_agent_id: The AI agent ID string (e.g., "task_translation_a1")
+
+        Returns:
+            Corresponding AssistantID enum value
+
+        Raises:
+            ValueError: If the ai_agent_id is not a valid AssistantID
+        """
+        try:
+            return cls(ai_agent_id)
+        except ValueError:
+            raise ValueError(f"Unsupported ai_agent_id: {ai_agent_id}")
 
 
 class ParsedChunk_Metadata(TypedDict):
@@ -272,6 +295,14 @@ class LangGraphClientSDK:
         thread_id: str,
         assistant_id: AssistantID,
         prompt: str,
+        # Added on v2026.01.29 for File Translation Task
+        translation_memory: str | None = None,
+        translation_role: str | None = None,
+        translation_rules: str | None = None,
+        glossaries: str | None = None,
+        # Added on v2026.01.30 for LLM Model Selection
+        llm_model_id: str | None = None,
+        llm_model_temperature: float | None = None,
     ) -> AsyncGenerator[StreamPart]:
         """
         Ask a new task to the LangGraph assistant
@@ -292,20 +323,32 @@ class LangGraphClientSDK:
         client: LangGraphClient = await self.get_client(caller=__caller__)
 
         # Configure the task
-        # translation_role: str = # """"You are a professional translation/localization expert.\
-        translation_role: str = """You are a professional novelist who has embodied the literary traditions and style of the target country.\
-            If the source language is Korean then,
-            Target language: English.\
-            Target country: United States.\
-            Target city: New York.\
-            If the source language is English then,
-            Target language: Korean.\
-            Target country: South Korea.\
-            Target city: Seoul.\
-            Target audience: General public.\
-            Target purpose: Literary novel localization. \
-            """.strip()
-        config: Config = {"configurable": {"user_id": user_id, "translation_role": translation_role}}
+        if translation_role is None:
+            # This is for the Chatbot Task Demo, added a comment on v2026.01.29
+            translation_role = """You are a professional novelist who has embodied the literary traditions and style of the target country.\
+                If the source language is Korean then,
+                Target language: English.\
+                Target country: United States.\
+                Target city: New York.\
+                If the source language is English then,
+                Target language: Korean.\
+                Target country: South Korea.\
+                Target city: Seoul.\
+                Target audience: General public.\
+                Target purpose: Literary novel localization. \
+                """.strip()
+
+        config: Config = {
+            "configurable": {
+                "user_id": user_id,
+                "translation_memory": translation_memory,
+                "translation_role": translation_role,
+                "translation_rules": translation_rules,
+                "glossaries": glossaries,
+                "llm_model_id": llm_model_id,
+                "llm_model_temperature": llm_model_temperature,
+            }
+        }
 
         # Run the new task
         async for chunk in client.runs.stream(  # type: ignore[misc]

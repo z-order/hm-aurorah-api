@@ -30,10 +30,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.models.system_llm_model import (
-    SystemLlmModelCreate,
-    SystemLlmModelRead,
-    SystemLlmModelUpdate,
-    SystemLlmModelUpsert,
+    SystemLLMModelCreate,
+    SystemLLMModelRead,
+    SystemLLMModelUpdate,
+    SystemLLMModelUpsert,
 )
 
 logger = get_logger(__name__, logging.INFO)
@@ -43,6 +43,7 @@ router: APIRouter = APIRouter()
 
 @router.post(
     "/upsert",
+    summary="Upsert LLM Model",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "LLM model updated or already exists"},
@@ -51,7 +52,7 @@ router: APIRouter = APIRouter()
     },
 )
 async def upsert_llm_model(
-    model_data: SystemLlmModelUpsert,
+    model_data: SystemLLMModelUpsert,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -108,6 +109,7 @@ async def upsert_llm_model(
 
 @router.post(
     "/",
+    summary="Create LLM Model",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "LLM model created"},
@@ -116,7 +118,7 @@ async def upsert_llm_model(
     },
 )
 async def create_llm_model(
-    model_data: SystemLlmModelCreate,
+    model_data: SystemLLMModelCreate,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -171,7 +173,8 @@ async def create_llm_model(
 
 @router.get(
     "/",
-    response_model=list[SystemLlmModelRead],
+    summary="Get LLM Model",
+    response_model=list[SystemLLMModelRead],
     responses={
         500: {"description": "Internal server error"},
     },
@@ -223,6 +226,7 @@ async def get_llm_model(
 
 @router.put(
     "/{llm_model_id}",
+    summary="Update LLM Model",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "LLM model updated"},
@@ -232,7 +236,7 @@ async def get_llm_model(
 )
 async def update_llm_model(
     llm_model_id: str,
-    model_data: SystemLlmModelUpdate,
+    model_data: SystemLLMModelUpdate,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -287,6 +291,7 @@ async def update_llm_model(
 
 @router.delete(
     "/{llm_model_id}",
+    summary="Delete LLM Model",
     status_code=status.HTTP_200_OK,
     responses={
         200: {"description": "LLM model deleted"},
