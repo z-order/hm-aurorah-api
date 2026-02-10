@@ -83,9 +83,7 @@ async def create_file_translation(
                 "file_preset_json": json.dumps(translation_data.file_preset_json),
                 "assignee_id": translation_data.assignee_id,
                 "translated_text": (
-                    json.dumps(translation_data.translated_text)
-                    if translation_data.translated_text
-                    else None
+                    json.dumps(translation_data.translated_text) if translation_data.translated_text else None
                 ),
             },
         )
@@ -288,9 +286,7 @@ async def update_file_translation(
             {
                 "translation_id": translation_id,
                 "translated_text": (
-                    json.dumps(translation_data.translated_text)
-                    if translation_data.translated_text
-                    else None
+                    json.dumps(translation_data.translated_text) if translation_data.translated_text else None
                 ),
                 "translated_text_modified": (
                     json.dumps(translation_data.translated_text_modified)

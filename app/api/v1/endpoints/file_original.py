@@ -16,6 +16,7 @@ au_get_file_original      (no status, returns rows)
 See: scripts/schema-functions/schema-public.file.original.sql
 """
 
+import json
 import logging
 import uuid
 from typing import Any
@@ -64,7 +65,7 @@ async def create_file_original(
             """),
             {
                 "file_id": original_data.file_id,
-                "original_text": original_data.original_text,
+                "original_text": json.dumps(original_data.original_text),
             },
         )
         row = result.fetchone()
@@ -183,8 +184,14 @@ async def update_file_original(
             """),
             {
                 "original_id": original_id,
-                "original_text": original_data.original_text,
-                "original_text_modified": original_data.original_text_modified,
+                "original_text": (
+                    json.dumps(original_data.original_text) if original_data.original_text is not None else None
+                ),
+                "original_text_modified": (
+                    json.dumps(original_data.original_text_modified)
+                    if original_data.original_text_modified is not None
+                    else None
+                ),
             },
         )
         row = result.fetchone()
