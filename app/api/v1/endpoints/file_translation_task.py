@@ -116,9 +116,9 @@ async def bg_atask_create_file_translation(
 
         base_role = (
             f"Your base role is a professional translator and localizer who is fluent in the source and target languages. "
-            f"Target language: {target_language}. "
-            f"Target country: {target_country}. "
-            f"Target city: {target_city}. (If empty, the target city is set to the capital city of the target country) "
+            f"Target language: {target_language}. This can be language code (ex: KO, EN, JA, etc.) "
+            f"Target country: {target_country}. This can be country code (ex: US, KR, JP, etc.) "
+            f"Target city: {target_city if target_city else 'the capital city of the target country'}. "
             f"Target audience: {audience}. "
             f"Purpose of the translation/localization: {purpose}. "
         )
