@@ -2,7 +2,7 @@
    -- Run this SQL to seed data for required au_* tables 
 
    Option 1: Using environment from .env.local
-   $ psql $POSTGRES_URL < schema.sql
+   $ psql $POSTGRES_URpsql $POSTGRES_URLL < schema.sql
   
    Option 2: Using psql command line
    $ psql -h $DATABASE_HOST -U $DATABASE_USER -d $DATABASE_NAME -f schema.sql
@@ -26,15 +26,17 @@ ON CONFLICT (ai_agent_id) DO NOTHING;
 INSERT INTO au_system_llm_models (llm_model_id, llm_model_title, llm_model_keyword, ui_sort_order, provider)
 VALUES
     -- Anthropic models
-    ('claude-opus-4-5-20251101', 'Anthropic Claude 4.5 Opus', 'Flagship', 'A01', 'anthropic'),
-    ('claude-sonnet-4-5-20250929', 'Anthropic Claude 4.5 Sonnet', 'Balanced', 'A02', 'anthropic'),
-    ('claude-haiku-4-5-20251001', 'Anthropic Claude 4.5 Haiku', 'Fast', 'A03', 'anthropic'),
-    ('claude-4-opus', 'Anthropic Claude 4 Opus', 'High quality', 'A04', 'anthropic'),
-    ('claude-sonnet-4-20250514', 'Anthropic Claude 4 Sonnet', 'Balanced', 'A05', 'anthropic'),
-    ('claude-3.5-sonnet', 'Anthropic Claude 3.5 Sonnet', 'Legacy/Stable', 'A06', 'anthropic'),
-    ('claude-3-opus', 'Anthropic Claude 3 Opus', 'Legacy/Stable', 'A07', 'anthropic'),
-    ('claude-3.5-haiku', 'Anthropic Claude 3.5 Haiku', 'Legacy/Stable', 'A08', 'anthropic'),
-    ('claude-3-5-sonnet-20240620', 'Anthropic Claude 3.5 Sonnet (20240620)', 'Legacy/Stable', 'A09', 'anthropic'),
+    ('claude-opus-4-6', 'Anthropic Claude 4.6 Opus', 'Flagship', 'A01', 'anthropic'),
+    ('claude-sonnet-4-6', 'Anthropic Claude 4.6 Sonnet', 'Balanced', 'A02', 'anthropic'),
+    ('claude-opus-4-5-20251101', 'Anthropic Claude 4.5 Opus', 'Most capable', 'A03', 'anthropic'),
+    ('claude-sonnet-4-5-20250929', 'Anthropic Claude 4.5 Sonnet', 'Most efficient', 'A04', 'anthropic'),
+    ('claude-haiku-4-5-20251001', 'Anthropic Claude 4.5 Haiku', 'Fast', 'A05', 'anthropic'),
+    ('claude-4-opus', 'Anthropic Claude 4 Opus', 'High quality', 'A06', 'anthropic'),
+    ('claude-sonnet-4-20250514', 'Anthropic Claude 4 Sonnet', 'Balanced', 'A07', 'anthropic'),
+    ('claude-3.5-sonnet', 'Anthropic Claude 3.5 Sonnet', 'Legacy/Stable', 'A08', 'anthropic'),
+    ('claude-3-opus', 'Anthropic Claude 3 Opus', 'Legacy/Stable', 'A09', 'anthropic'),
+    ('claude-3.5-haiku', 'Anthropic Claude 3.5 Haiku', 'Legacy/Stable', 'A10', 'anthropic'),
+    ('claude-3-5-sonnet-20240620', 'Anthropic Claude 3.5 Sonnet (20240620)', 'Legacy/Stable', 'A11', 'anthropic'),
     -- OpenAI models
     ('gpt-5.2', 'OpenAI GPT-5.2', 'Flagship', 'B01', 'openai'),
     ('gpt-5.1', 'OpenAI GPT-5.1', 'High quality', 'B02', 'openai'),

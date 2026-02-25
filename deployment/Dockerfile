@@ -18,9 +18,11 @@ FROM python:3.13-slim
 
 WORKDIR /home
 
-# Install runtime dependencies
+# Install runtime dependencies + Noto fonts for full Unicode PDF support
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    fonts-noto-cjk \
+    fonts-noto-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from build stage

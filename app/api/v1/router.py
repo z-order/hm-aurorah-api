@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     chatbot_stream,
     file_acl,
     file_check_point,
+    file_download,
     file_edit_history,
     file_node,
     file_original,
@@ -27,6 +28,7 @@ api_router = APIRouter()
 api_router.include_router(file_node.router, prefix="/file/node", tags=["File Node"])
 api_router.include_router(file_acl.router, prefix="/file/acl", tags=["File ACL"])
 api_router.include_router(file_check_point.router, prefix="/file/checkpoint", tags=["File Checkpoint"])
+api_router.include_router(file_download.router, prefix="/file/download", tags=["File Download"])
 api_router.include_router(file_edit_history.router, prefix="/file/edit-history", tags=["File Edit History"])
 api_router.include_router(file_original.router, prefix="/file/original", tags=["File Original"])
 api_router.include_router(file_preset.router, prefix="/file/preset", tags=["File Preset"])

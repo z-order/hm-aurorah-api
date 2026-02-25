@@ -31,6 +31,12 @@ langchain-core
 # Redis
 redis
 
+# File download (document generation)
+python-docx
+openpyxl
+fpdf2
+uharfbuzz
+
 # Testing
 pytest
 pytest-asyncio

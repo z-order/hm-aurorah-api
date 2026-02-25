@@ -33,15 +33,15 @@ def _try_parse_json_segments(raw_text: str) -> dict[str, list[dict[str, str | in
     if not isinstance(parsed, dict):
         return None
 
-    segments = parsed.get("segments")
-    if not isinstance(segments, list) or len(segments) == 0:
+    segments = parsed.get("segments") # type: ignore[union-attr]
+    if not isinstance(segments, list) or len(segments) == 0: # type: ignore[arg-type]
         return None
 
     # Validate segment structure: each must have "sid" and "text"
     valid: list[dict[str, str | int]] = []
-    for seg in segments:
+    for seg in segments: # type: ignore[union-attr]
         if isinstance(seg, dict) and "sid" in seg and "text" in seg:
-            valid.append({"sid": seg["sid"], "text": str(seg["text"])})
+            valid.append({"sid": seg["sid"], "text": str(seg["text"])}) # type: ignore[union-attr]
 
     if valid:
         logger.info(f"[analyze_raw_text_to_json] Detected JSON segments input ({len(valid)} segments), parsed directly")
