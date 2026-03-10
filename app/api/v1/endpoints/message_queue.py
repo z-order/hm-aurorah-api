@@ -159,17 +159,18 @@ async def subscribe_to_channel_events(
                 event_type = data.get("type", "message")
                 payload = {
                     "id": msg_id,
-                    "type": "done" if event_type == "done" else "data",
+                    "type": event_type if event_type in ("done", "error") else "data",
                     "data": data,
                 }
 
-                # Yield as SSE event (system events like "done" use event: system)
-                sse_event_name = "system" if event_type == "done" else event_type
+                # Yield as SSE event ("done"/"error" use event: system)
+                sse_event_name = "system" if event_type in ("done", "error") else event_type
                 yield await sse_event(payload, event=sse_event_name)
 
-                # Stop if done marker
-                if event_type == "done":
-                    logger.info(f"Done marker received for channel '{channel_id}'")
+                # Terminal events: client receives "done"/"error" via event: system,
+                # then calls EventSource.close(). Server closes the stream after.
+                if event_type in ("done", "error"):
+                    logger.info(f"Terminal event '{event_type}' received for channel '{channel_id}'")
                     break
 
         except Exception as e:

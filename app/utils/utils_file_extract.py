@@ -191,6 +191,10 @@ def _extract_text_from_pdf_ocr(file_bytes: bytes) -> str:
         data={"model": "ocr"},
         timeout=300.0,
     )
+    if response.status_code == 413:
+        size_mb = len(file_bytes) / (1024 * 1024)
+        raise ValueError(f"PDF file too large for OCR processing ({size_mb:.1f} MB). Please use a smaller file.")
+
     response.raise_for_status()
 
     result = response.json()

@@ -199,10 +199,10 @@ Update `open_file_task`:
 - Add file type classification logic
 - **Sync path** (txt, srt, vtt, csv, tsv): extract inline, create task, return without `rsmq_channel_id`
 - **Async path** (docx, pptx, xlsx, hwpx, pdf, epub, rtf, video):
-    - Create file task with placeholder `{"segments": []}`
-    - Generate `rsmq_channel_id` via `uuid7()`
-    - Add `bg_atask_extract_file_text` to `BackgroundTasks`
-    - Return `FileTaskRead` with `rsmq_channel_id` set
+  - Create file task with placeholder `{"segments": []}`
+  - Generate `rsmq_channel_id` via `uuid7()`
+  - Add `bg_atask_extract_file_text` to `BackgroundTasks`
+  - Return `FileTaskRead` with `rsmq_channel_id` set
 - Add `BackgroundTasks` parameter to endpoint signature
 - Import new modules
 
@@ -226,3 +226,92 @@ Add `pymupdf` (PyMuPDF, imported as `fitz`) and `python-pptx`. Note: `python-doc
 | RTF (async)   | `.rtf`                                                  | `extract_text_from_rtf`                |
 | Video (async) | `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.flv`, `.wmv` | `extract_text_from_video` (stub)       |
 | Unsupported   | anything else                                           | `HTTPException(422)`                   |
+
+---
+
+## SSE Event Flow (Client Contract)
+
+The client subscribes to `GET /api/v1/mq/channels/{channel_id}/events` via `EventSource`.
+
+### Event Types
+
+All terminal events (`done`, `error`) are sent under SSE event name `system`.
+Progress events are sent under SSE event name `progress`.
+
+**Important:** The SSE event name `error` is reserved by `EventSource` for connection-level errors. Server never uses it as a custom event name.
+
+| SSE event name | `payload.type` | `payload.data`                                        | Client action                                    |
+| -------------- | -------------- | ----------------------------------------------------- | ------------------------------------------------ |
+| `system`       | `"connected"`  | `{"type":"connected","consumer":"..."}`               | Connection ready                                 |
+| `progress`     | `"data"`       | `{"type":"progress","message":"Downloading file..."}` | Show progress indicator                          |
+| `system`       | `"done"`       | `{"type":"done"}`                                     | Handle success, call `es.close()`                |
+| `system`       | `"error"`      | `{"type":"error","message":"PDF file too large..."}`  | Display error message to user, call `es.close()` |
+
+### Success Flow
+
+```
+Server                              Client (EventSource)
+  |                                      |
+  |  event: system                       |
+  |  {"type":"connected"}                |
+  |  --------------------------------->  |  (connection established)
+  |                                      |
+  |  event: progress                     |
+  |  {"type":"data",                     |
+  |   "data":{"type":"progress",         |
+  |     "message":"Downloading..."}}     |
+  |  --------------------------------->  |  (show progress)
+  |                                      |
+  |  event: progress                     |
+  |  {"type":"data",                     |
+  |   "data":{"type":"progress",         |
+  |     "message":"Extracting text..."}} |
+  |  --------------------------------->  |  (show progress)
+  |                                      |
+  |  event: progress                     |
+  |  {"type":"data",                     |
+  |   "data":{"type":"progress",         |
+  |     "message":"Processing..."}}      |
+  |  --------------------------------->  |  (show progress)
+  |                                      |
+  |  event: system                       |
+  |  {"type":"done",                     |
+  |   "data":{"type":"done"}}            |
+  |  --------------------------------->  |  (success, call es.close())
+  |                                      |
+  |  [server closes stream]              |
+```
+
+### Error Flow
+
+```
+Server                              Client (EventSource)
+  |                                      |
+  |  event: system                       |
+  |  {"type":"connected"}                |
+  |  --------------------------------->  |  (connection established)
+  |                                      |
+  |  event: progress                     |
+  |  {"type":"data",                     |
+  |   "data":{"type":"progress",         |
+  |     "message":"Downloading..."}}     |
+  |  --------------------------------->  |  (show progress)
+  |                                      |
+  |  event: system                       |
+  |  {"type":"error",                    |
+  |   "data":{"type":"error",            |
+  |     "message":"PDF file too large    |
+  |      for OCR processing (25.3 MB).   |
+  |      Please use a smaller file."}}   |
+  |  --------------------------------->  |  (show error, call es.close())
+  |                                      |
+  |  [server closes stream]              |
+```
+
+### Client Rules
+
+1. Listen on `addEventListener("system", ...)` and `addEventListener("progress", ...)`
+2. **Never** listen on `"error"` event name -- it is reserved by `EventSource` for connection errors
+3. Client **must** call `es.close()` on both `done` and `error`
+4. Server closes the stream after sending the terminal event; client receives it then calls `es.close()`
+5. Check `payload.type` to distinguish `"done"` vs `"error"` in system events
