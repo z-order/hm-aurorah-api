@@ -24,15 +24,24 @@ import logging
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid_utils import uuid7
 
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.models.file_task import FileTaskCreate, FileTaskRead, FileTaskReadWithDetails, FileTaskUpdate
-from app.utils.utils_http import read_raw_text_file_from_url
+from app.utils.utils_file_validate import (
+    SYNC_CATEGORIES,
+    ZIP_CATEGORIES,
+    validate_file_extension,
+    validate_file_magic_bytes,
+)
+from app.utils.utils_http import read_binary_file_from_url, read_file_header_from_url, read_raw_text_file_from_url
 from app.utils.utils_text import analyze_raw_text_to_json
+
+from .file_task_extract import bg_atask_extract_file_text
 
 logger = get_logger(__name__, logging.INFO)
 
@@ -45,23 +54,25 @@ router: APIRouter = APIRouter()
     status_code=status.HTTP_200_OK,
     responses={
         404: {"description": "File not found"},
-        422: {"description": "File has no URL"},
+        422: {"description": "File has no URL or unsupported file type"},
         500: {"description": "Internal server error"},
         502: {"description": "Failed to read file from CDN server"},
     },
 )
 async def open_file_task(
     file_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """
     Open file task (get existing or create new)
 
     1. Try to get existing file task
-    2. If not found, get file_url from au_file_nodes
-    3. Read original_text from file_url
-    4. Create new file task with original_text
-    5. Return the file task
+    2. If not found, get file_url and file_ext from au_file_nodes
+    3. Validate file type (extension + magic bytes)
+    4a. Sync path (text files): extract inline, create task, return
+    4b. Async path (docx/pptx/xlsx/hwpx/pdf/epub/video): create task with
+        placeholder, launch background extraction, return with rsmq_channel_id
     """
 
     # Step 1: Try to get existing file task
@@ -71,11 +82,11 @@ async def open_file_task(
         if e.status_code != status.HTTP_404_NOT_FOUND:
             raise
 
-    # Step 2: Task not found, get file_url from au_file_nodes
+    # Step 2: Task not found, get file_url and file_ext from au_file_nodes
     try:
         result = await db.execute(
             text("""
-                SELECT file_id, file_url FROM au_file_nodes
+                SELECT file_id, file_url, file_ext FROM au_file_nodes
                 WHERE file_id = :file_id AND deleted_at IS NULL
             """),
             {"file_id": file_id},
@@ -83,37 +94,81 @@ async def open_file_task(
         file_row = result.fetchone()
 
         if not file_row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File not found",
-            )
+            detail = "File not found"
+            logger.warning(f"open_file_task: file_id={file_id}, 404={detail}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
         if not file_row.file_url:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="File has no URL",
-            )
+            detail = "File has no URL"
+            logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
-        # Step 3: Read raw text from file_url and analyze to JSON
-        raw_text = await read_raw_text_file_from_url(file_row.file_url)
-        original_text = analyze_raw_text_to_json(raw_text)
+        # Step 3: Validate file type
+        try:
+            category = validate_file_extension(file_row.file_ext)
+        except ValueError as e:
+            detail = str(e)
+            logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
-        # Step 4: Create new file task with original_text
-        file_task_data = FileTaskCreate(file_id=file_id, original_text=original_text)
+        # Step 3b: Magic bytes validation for non-text files
+        file_content_for_extract: bytes | None = None
+        if category not in SYNC_CATEGORIES:
+            if category in ZIP_CATEGORIES:
+                file_content_for_extract = await read_binary_file_from_url(file_row.file_url)
+                file_header = file_content_for_extract
+            else:
+                file_header = await read_file_header_from_url(file_row.file_url)
+            if not validate_file_magic_bytes(file_header, file_row.file_ext):
+                detail = f"File content does not match extension {file_row.file_ext}"
+                logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
+
+        # =====================================================================
+        # Step 4a: SYNC PATH (text files)
+        # =====================================================================
+        if category in SYNC_CATEGORIES:
+            # Read raw text from file_url and analyze to JSON
+            raw_text = await read_raw_text_file_from_url(file_row.file_url)
+            original_text = analyze_raw_text_to_json(raw_text)
+
+            # Create new file task with original_text
+            file_task_data = FileTaskCreate(file_id=file_id, original_text=original_text)
+            await create_file_task(file_task_data, db)
+
+            # Return newly created file task
+            return await get_file_task(file_id, db)
+
+        # =====================================================================
+        # Step 4b: ASYNC PATH (docx/pptx/xlsx/hwpx/pdf/epub/video)
+        # =====================================================================
+        placeholder_text: dict[str, Any] = {"segments": []}
+        file_task_data = FileTaskCreate(file_id=file_id, original_text=placeholder_text)
         await create_file_task(file_task_data, db)
 
-        # Step 5: Return newly created file task
-        return await get_file_task(file_id, db)
+        task_data = await get_file_task(file_id, db)
 
-    except HTTPException:  # 502 from read_raw_text_file_from_url()
+        rsmq_channel_id = str(uuid7())
+
+        background_tasks.add_task(
+            bg_atask_extract_file_text,
+            rsmq_channel_id=rsmq_channel_id,
+            original_id=task_data["original_id"],
+            file_url=file_row.file_url,
+            file_ext=file_row.file_ext,
+            file_content=file_content_for_extract,
+        )
+
+        task_data["rsmq_channel_id"] = rsmq_channel_id
+        return task_data
+
+    except HTTPException:  # Re-raise 404/422/502 from validation or read_raw_text_file_from_url
         raise
 
     except Exception as e:
-        logger.error(f"Failed to open file task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to open file task.",
-        )
+        msg = "Failed to open file task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.post(
@@ -149,10 +204,9 @@ async def create_file_task(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file task",
-            )
+            detail = "Failed to create file task (no row returned)"
+            logger.error(f"create_file_task: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_task() - status={row.status}, message={row.message}")
@@ -176,11 +230,9 @@ async def create_file_task(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file task.",
-        )
+        msg = "Failed to create file task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -212,10 +264,9 @@ async def get_file_task(
         row = result.fetchone()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File task not found",
-            )
+            detail = "File task not found"
+            logger.warning(f"get_file_task: file_id={file_id}, 404={detail}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
         return {
             "file_id": row.file_id,
@@ -232,11 +283,9 @@ async def get_file_task(
         raise
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file task.",
-        )
+        msg = "Failed to retrieve file task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -270,10 +319,9 @@ async def get_file_task_with_details(
         row = result.fetchone()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File task not found",
-            )
+            detail = "File task not found"
+            logger.warning(f"get_file_task_with_details: file_id={file_id}, 404={detail}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
         return {
             "file_id": row.file_id,
@@ -299,11 +347,9 @@ async def get_file_task_with_details(
         raise
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file task with details: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file task with details.",
-        )
+        msg = "Failed to retrieve file task with details"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -347,10 +393,9 @@ async def update_file_task(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file task",
-            )
+            detail = "Failed to update file task (no row returned)"
+            logger.error(f"update_file_task: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_task() - status={row.status}, message={row.message}")
@@ -367,8 +412,6 @@ async def update_file_task(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file task.",
-        )
+        msg = "Failed to update file task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

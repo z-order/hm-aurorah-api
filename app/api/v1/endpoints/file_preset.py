@@ -94,10 +94,9 @@ async def create_file_preset(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file preset",
-            )
+            detail = "Failed to create file preset (no row returned)"
+            logger.error(f"create_file_preset: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 409:
             logger.info(f"pg-function: au_create_file_preset() - status={row.status}, message={row.message}")
@@ -114,11 +113,9 @@ async def create_file_preset(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file preset: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file preset.",
-        )
+        msg = "Failed to create file preset"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -181,11 +178,9 @@ async def get_file_preset(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file preset: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file preset.",
-        )
+        msg = "Failed to retrieve file preset"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -247,10 +242,9 @@ async def update_file_preset(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file preset",
-            )
+            detail = "Failed to update file preset (no row returned)"
+            logger.error(f"update_file_preset: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_preset() - status={row.status}, message={row.message}")
@@ -267,11 +261,9 @@ async def update_file_preset(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file preset: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file preset.",
-        )
+        msg = "Failed to update file preset"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -302,10 +294,9 @@ async def delete_file_preset(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete file preset",
-            )
+            detail = "Failed to delete file preset (no row returned)"
+            logger.error(f"delete_file_preset: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_delete_file_preset() - status={row.status}, message={row.message}")
@@ -322,8 +313,6 @@ async def delete_file_preset(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete file preset: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete file preset.",
-        )
+        msg = "Failed to delete file preset"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

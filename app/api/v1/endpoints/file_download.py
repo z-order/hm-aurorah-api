@@ -1,14 +1,27 @@
 """
-File download endpoint
+File download endpoints
 
 Generates downloadable document files (TXT, DOCX, PDF, XLSX) from
 original, translation, or proofreading text data stored in PostgreSQL.
 
-Endpoint                          SQL Function
---------------------------------  ------------------------------------------
-POST /                            au_get_file_original()
-                                  au_get_file_translation_for_jsonb()
-                                  au_get_file_proofreading_for_jsonb()
+Endpoint    SQL Function (delegated per source)
+----------  ----------------------------------------------------
+POST /      au_get_file_original()              (original_id)
+            au_get_file_translation_for_jsonb() (translation_id)
+            au_get_file_proofreading_for_jsonb()(proofreading_id)
+
+SQL Function                          Status Codes
+------------------------------------  ------------------------------------------
+au_get_file_original                  (no status; see file_original.py)
+au_get_file_translation_for_jsonb     (no status; see file_translation.py)
+au_get_file_proofreading_for_jsonb    (no status; see file_proofreading.py)
+
+HTTP Status Codes returned by this endpoint
+-------------------------------------------
+200  OK               File generated and returned
+400  Bad Request      No valid source ID provided, or missing text data
+404  Not Found        Source record not found
+500  Internal Error   Generation failure
 
 Request Body (FileDownloadRequest):
     - file_id: UUID (required -- used by existing SQL functions)
@@ -27,9 +40,13 @@ Source Table Mapping:
     translation_id     au_get_file_translation_for_jsonb(:file_id, :id)         translated_text      translated_text_modified
     proofreading_id    au_get_file_proofreading_for_jsonb(:file_id, :id)        proofreaded_text     proofreaded_text_modified (planned)
 
-See: scripts/schema-functions/schema-public.file.original.sql
+See: scripts/schema-functions/schema-public.file.download.sql
+     scripts/schema-functions/schema-public.file.original.sql
      scripts/schema-functions/schema-public.file.translation.sql
      scripts/schema-functions/schema-public.file.proofreading.sql
+     app/api/v1/endpoints/file_original.py      (au_get_file_original usage)
+     app/api/v1/endpoints/file_translation.py   (au_get_file_translation_for_jsonb usage)
+     app/api/v1/endpoints/file_proofreading.py  (au_get_file_proofreading_for_jsonb usage)
 """
 
 import logging
@@ -57,7 +74,9 @@ logger = get_logger(__name__, logging.INFO)
 router: APIRouter = APIRouter()
 
 
-def merge_segments(base_segments: list[dict[str, Any]], modified_segments: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+def merge_segments(
+    base_segments: list[dict[str, Any]], modified_segments: list[dict[str, Any]] | None
+) -> list[dict[str, Any]]:
     """
     Merge base segments with modified overlay.
 
@@ -78,10 +97,7 @@ def merge_segments(base_segments: list[dict[str, Any]], modified_segments: list[
     # Build a lookup map from the modified segments for O(1) access
     modified_map: dict[int, str] = {s["sid"]: s["text"] for s in modified_segments}
 
-    return [
-        {"sid": s["sid"], "text": modified_map.get(s["sid"], s["text"])}
-        for s in base_segments
-    ]
+    return [{"sid": s["sid"], "text": modified_map.get(s["sid"], s["text"])} for s in base_segments]
 
 
 @router.post(
@@ -168,10 +184,9 @@ async def download_file(
             source_label = "proofreading"
 
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No valid source ID provided",
-            )
+            detail = "No valid source ID provided"
+            logger.warning(f"download_file: 400={detail}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
         # ------------------------------------------------------------------
         # 2. Fetch the row from the query result
@@ -179,10 +194,9 @@ async def download_file(
         row = result.fetchone()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"File {source_label} not found: {record_id}",
-            )
+            detail = f"File {source_label} not found: {record_id}"
+            logger.warning(f"download_file: 404={detail}")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
         # ------------------------------------------------------------------
         # 3. Extract JSONB data and parse segments
@@ -191,10 +205,9 @@ async def download_file(
         modified_data: dict[str, Any] | None = getattr(row, modified_column, None) if modified_column else None
 
         if not base_data or "segments" not in base_data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No text data found in {source_label} record: {record_id}",
-            )
+            detail = f"No text data found in {source_label} record: {record_id}"
+            logger.warning(f"download_file: 400={detail}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
         base_segments: list[dict[str, Any]] = base_data["segments"]
 
@@ -225,10 +238,9 @@ async def download_file(
         elif fmt == "xlsx":
             file_bytes = generate_xlsx(segments, include_numbers, column_title)
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported format: {fmt}",
-            )
+            detail = f"Unsupported format: {fmt}"
+            logger.warning(f"download_file: 400={detail}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
         # ------------------------------------------------------------------
         # 6. Build the filename and return the file response
@@ -254,8 +266,6 @@ async def download_file(
         raise
 
     except Exception as e:
-        logger.error(f"Failed to generate file download: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate file download.",
-        )
+        msg = "Failed to generate file download"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

@@ -145,6 +145,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = None
     LANGSMITH_API_KEY: str | None = None
     ANTHROPIC_API_KEY: str | None = None
+    UPSTAGE_API_KEY: str | None = None
 
     # External Services
     LANGGRAPH_API_URL: str = "http://localhost:8123"

@@ -39,7 +39,7 @@ class FileNodeBase(SQLModel):
     file_url: str | None = Field(default=None, max_length=1024)
     file_ext: str = Field(default="", max_length=32)
     file_size: int = Field(default=0)
-    mime_type: str | None = Field(default=None, max_length=32)
+    mime_type: str | None = Field(default=None, max_length=128)
     description: str | None = Field(default=None, max_length=512)
 
 
@@ -71,7 +71,7 @@ class FileNodeCreate(SQLModel):
     file_url: str | None = Field(default=None, max_length=1024)
     file_ext: str = Field(default="", max_length=32)
     file_size: int = Field(default=0, ge=0)
-    mime_type: str | None = Field(default=None, max_length=32)
+    mime_type: str | None = Field(default=None, max_length=128)
     description: str | None = Field(default=None, max_length=512)
 
 

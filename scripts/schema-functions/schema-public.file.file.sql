@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION au_create_file(
   p_file_url VARCHAR(1024),
   p_file_ext VARCHAR(32),
   p_file_size BIGINT,
-  p_mime_type VARCHAR(32),
+  p_mime_type VARCHAR(128),
   p_description VARCHAR(512)
 )
 RETURNS TABLE (
@@ -373,7 +373,7 @@ RETURNS TABLE (
   file_url VARCHAR(1024),
   file_ext VARCHAR(32),
   file_size BIGINT,
-  mime_type VARCHAR(32),
+  mime_type VARCHAR(128),
   description VARCHAR(512),
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,

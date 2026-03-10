@@ -84,10 +84,9 @@ async def upsert_ai_agent(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upsert AI agent",
-            )
+            detail = "Failed to upsert AI agent (no row returned)"
+            logger.error(f"upsert_ai_agent: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -100,11 +99,9 @@ async def upsert_ai_agent(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to upsert AI agent: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upsert AI agent.",
-        )
+        msg = "Failed to upsert AI agent"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.post(
@@ -145,10 +142,9 @@ async def create_ai_agent(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create AI agent",
-            )
+            detail = "Failed to create AI agent (no row returned)"
+            logger.error(f"create_ai_agent: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -164,11 +160,9 @@ async def create_ai_agent(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create AI agent: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create AI agent.",
-        )
+        msg = "Failed to create AI agent"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -216,11 +210,9 @@ async def get_ai_agent(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve AI agent: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve AI agent.",
-        )
+        msg = "Failed to retrieve AI agent"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -262,10 +254,9 @@ async def update_ai_agent(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update AI agent",
-            )
+            detail = "Failed to update AI agent (no row returned)"
+            logger.error(f"update_ai_agent: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -281,11 +272,9 @@ async def update_ai_agent(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update AI agent: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update AI agent.",
-        )
+        msg = "Failed to update AI agent"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -319,10 +308,9 @@ async def delete_ai_agent(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete AI agent",
-            )
+            detail = "Failed to delete AI agent (no row returned)"
+            logger.error(f"delete_ai_agent: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -338,8 +326,6 @@ async def delete_ai_agent(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete AI agent: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete AI agent.",
-        )
+        msg = "Failed to delete AI agent"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

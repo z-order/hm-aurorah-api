@@ -204,7 +204,7 @@ RETURNS TABLE (
   file_url VARCHAR(1024),
   file_ext VARCHAR(32),
   file_size BIGINT,
-  mime_type VARCHAR(32),
+  mime_type VARCHAR(128),
   description VARCHAR(512),
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,

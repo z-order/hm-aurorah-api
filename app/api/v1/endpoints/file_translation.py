@@ -91,10 +91,9 @@ async def create_file_translation(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file translation",
-            )
+            detail = "Failed to create file translation (no row returned)"
+            logger.error(f"create_file_translation: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_translation() - status={row.status}, message={row.message}")
@@ -130,11 +129,9 @@ async def create_file_translation(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file translation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file translation.",
-        )
+        msg = "Failed to create file translation"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -188,11 +185,9 @@ async def get_file_translation_for_listing(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file translation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file translation.",
-        )
+        msg = "Failed to retrieve file translation"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -249,11 +244,9 @@ async def get_file_translation_for_jsonb(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file translation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file translation.",
-        )
+        msg = "Failed to retrieve file translation"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -299,10 +292,9 @@ async def update_file_translation(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file translation",
-            )
+            detail = "Failed to update file translation (no row returned)"
+            logger.error(f"update_file_translation: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_translation() - status={row.status}, message={row.message}")
@@ -319,11 +311,9 @@ async def update_file_translation(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file translation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file translation.",
-        )
+        msg = "Failed to update file translation"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -354,10 +344,9 @@ async def delete_file_translation(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete file translation",
-            )
+            detail = "Failed to delete file translation (no row returned)"
+            logger.error(f"delete_file_translation: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_delete_file_translation() - status={row.status}, message={row.message}")
@@ -374,8 +363,6 @@ async def delete_file_translation(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete file translation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete file translation.",
-        )
+        msg = "Failed to delete file translation"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

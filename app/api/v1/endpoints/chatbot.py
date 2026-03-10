@@ -87,11 +87,9 @@ async def create_chatbot_task(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create chatbot task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create chatbot task.",
-        )
+        msg = "Failed to create chatbot task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get("/task/{user_id}", response_model=list[ChatbotTaskRead])
@@ -120,11 +118,9 @@ async def get_chatbot_tasks(
         return chatbot_tasks
 
     except Exception as e:
-        logger.error(f"Failed to retrieve chatbot tasks: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve chatbot tasks.",
-        )
+        msg = "Failed to retrieve chatbot tasks"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put("/task/{task_id}", response_model=ChatbotTaskRead)
@@ -167,11 +163,9 @@ async def update_chatbot_task(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update chatbot task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update chatbot task.",
-        )
+        msg = "Failed to update chatbot task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete("/task/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -211,11 +205,9 @@ async def delete_chatbot_task(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete chatbot task: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete chatbot task.",
-        )
+        msg = "Failed to delete chatbot task"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 #
@@ -428,11 +420,9 @@ async def create_chatbot_message(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create chatbot message: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create chatbot message.",
-        )
+        msg = "Failed to create chatbot message"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get("/message/{task_id}", response_model=list[ChatbotMessageRead])
@@ -461,11 +451,9 @@ async def get_chatbot_messages(
         return chatbot_messages
 
     except Exception as e:
-        logger.error(f"Failed to retrieve chatbot messages: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve chatbot messages.",
-        )
+        msg = "Failed to retrieve chatbot messages"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put("/message/{message_id}", response_model=ChatbotMessageRead)
@@ -514,11 +502,9 @@ async def update_chatbot_message(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update chatbot message: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update chatbot message.",
-        )
+        msg = "Failed to update chatbot message"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete("/message/{message_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -558,8 +544,6 @@ async def delete_chatbot_message(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete chatbot message: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete chatbot message.",
-        )
+        msg = "Failed to delete chatbot message"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

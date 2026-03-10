@@ -113,10 +113,9 @@ async def create_file_node(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file node",
-            )
+            detail = "Failed to create file node (no row returned)"
+            logger.error(f"create_file_node: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file() - status={row.status}, message={row.message}")
@@ -140,11 +139,9 @@ async def create_file_node(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file node: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file node.",
-        )
+        msg = "Failed to create file node"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -206,11 +203,9 @@ async def get_file_nodes(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file nodes: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file nodes.",
-        )
+        msg = "Failed to retrieve file nodes"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -247,10 +242,9 @@ async def update_file_node(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file node",
-            )
+            detail = "Failed to update file node (no row returned)"
+            logger.error(f"update_file_node: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file() - status={row.status}, message={row.message}")
@@ -274,11 +268,9 @@ async def update_file_node(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file node: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file node.",
-        )
+        msg = "Failed to update file node"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -309,10 +301,9 @@ async def delete_file_node(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete file node",
-            )
+            detail = "Failed to delete file node (no row returned)"
+            logger.error(f"delete_file_node: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_delete_file() -  status={row.status}, message={row.message}")
@@ -329,11 +320,9 @@ async def delete_file_node(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete file node: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete file node.",
-        )
+        msg = "Failed to delete file node"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.post(
@@ -365,10 +354,9 @@ async def duplicate_file_node(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to duplicate file node",
-            )
+            detail = "Failed to duplicate file node (no row returned)"
+            logger.error(f"duplicate_file_node: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_duplicate_file() - status={row.status}, message={row.message}")
@@ -385,11 +373,9 @@ async def duplicate_file_node(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to duplicate file node: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to duplicate file node.",
-        )
+        msg = "Failed to duplicate file node"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -425,10 +411,9 @@ async def move_file_node(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to move file node",
-            )
+            detail = "Failed to move file node (no row returned)"
+            logger.error(f"move_file_node: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_move_file() - status={row.status}, message={row.message}")
@@ -452,8 +437,6 @@ async def move_file_node(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to move file node: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to move file node.",
-        )
+        msg = "Failed to move file node"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

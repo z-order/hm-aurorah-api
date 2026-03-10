@@ -84,10 +84,9 @@ async def upsert_llm_model(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upsert LLM model",
-            )
+            detail = "Failed to upsert LLM model (no row returned)"
+            logger.error(f"upsert_llm_model: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -100,11 +99,9 @@ async def upsert_llm_model(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to upsert LLM model: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upsert LLM model.",
-        )
+        msg = "Failed to upsert LLM model"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.post(
@@ -145,10 +142,9 @@ async def create_llm_model(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create LLM model",
-            )
+            detail = "Failed to create LLM model (no row returned)"
+            logger.error(f"create_llm_model: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -164,11 +160,9 @@ async def create_llm_model(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create LLM model: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create LLM model.",
-        )
+        msg = "Failed to create LLM model"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -217,11 +211,9 @@ async def get_llm_model(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve LLM model: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve LLM model.",
-        )
+        msg = "Failed to retrieve LLM model"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -263,10 +255,9 @@ async def update_llm_model(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update LLM model",
-            )
+            detail = "Failed to update LLM model (no row returned)"
+            logger.error(f"update_llm_model: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -282,11 +273,9 @@ async def update_llm_model(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update LLM model: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update LLM model.",
-        )
+        msg = "Failed to update LLM model"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -320,10 +309,9 @@ async def delete_llm_model(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete LLM model",
-            )
+            detail = "Failed to delete LLM model (no row returned)"
+            logger.error(f"delete_llm_model: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         # Set HTTP response status code from SQL function result
         response.status_code = row.status
@@ -339,8 +327,6 @@ async def delete_llm_model(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete LLM model: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete LLM model.",
-        )
+        msg = "Failed to delete LLM model"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

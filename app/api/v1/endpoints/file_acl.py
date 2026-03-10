@@ -68,10 +68,9 @@ async def create_file_acl(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file ACL",
-            )
+            detail = "Failed to create file ACL (no row returned)"
+            logger.error(f"create_file_acl: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_acl() - status={row.status}, message={row.message}")
@@ -95,11 +94,9 @@ async def create_file_acl(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file ACL: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file ACL.",
-        )
+        msg = "Failed to create file ACL"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -146,11 +143,9 @@ async def get_file_acl(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file ACL: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file ACL.",
-        )
+        msg = "Failed to retrieve file ACL"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -185,10 +180,9 @@ async def update_file_acl(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file ACL",
-            )
+            detail = "Failed to update file ACL (no row returned)"
+            logger.error(f"update_file_acl: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_acl() - status={row.status}, message={row.message}")
@@ -205,11 +199,9 @@ async def update_file_acl(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file ACL: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file ACL.",
-        )
+        msg = "Failed to update file ACL"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -244,10 +236,9 @@ async def delete_file_acl(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete file ACL",
-            )
+            detail = "Failed to delete file ACL (no row returned)"
+            logger.error(f"delete_file_acl: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_delete_file_acl() - status={row.status}, message={row.message}")
@@ -264,8 +255,6 @@ async def delete_file_acl(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete file ACL: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete file ACL.",
-        )
+        msg = "Failed to delete file ACL"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

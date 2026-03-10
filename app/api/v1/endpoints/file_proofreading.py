@@ -82,10 +82,9 @@ async def create_file_proofreading(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file proofreading",
-            )
+            detail = "Failed to create file proofreading (no row returned)"
+            logger.error(f"create_file_proofreading: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_proofreading() - status={row.status}, message={row.message}")
@@ -102,11 +101,9 @@ async def create_file_proofreading(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file proofreading: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file proofreading.",
-        )
+        msg = "Failed to create file proofreading"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -155,11 +152,9 @@ async def get_file_proofreading_for_listing(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file proofreading: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file proofreading.",
-        )
+        msg = "Failed to retrieve file proofreading"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -209,11 +204,9 @@ async def get_file_proofreading_for_jsonb(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file proofreading: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file proofreading.",
-        )
+        msg = "Failed to retrieve file proofreading"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -255,10 +248,9 @@ async def update_file_proofreading(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file proofreading",
-            )
+            detail = "Failed to update file proofreading (no row returned)"
+            logger.error(f"update_file_proofreading: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_proofreading() - status={row.status}, message={row.message}")
@@ -275,11 +267,9 @@ async def update_file_proofreading(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file proofreading: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file proofreading.",
-        )
+        msg = "Failed to update file proofreading"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete(
@@ -310,10 +300,9 @@ async def delete_file_proofreading(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete file proofreading",
-            )
+            detail = "Failed to delete file proofreading (no row returned)"
+            logger.error(f"delete_file_proofreading: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_delete_file_proofreading() - status={row.status}, message={row.message}")
@@ -330,8 +319,6 @@ async def delete_file_proofreading(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to delete file proofreading: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete file proofreading.",
-        )
+        msg = "Failed to delete file proofreading"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

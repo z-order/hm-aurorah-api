@@ -72,10 +72,9 @@ async def create_file_original(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file original",
-            )
+            detail = "Failed to create file original (no row returned)"
+            logger.error(f"create_file_original: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_original() - status={row.status}, message={row.message}")
@@ -99,11 +98,9 @@ async def create_file_original(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file original: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file original.",
-        )
+        msg = "Failed to create file original"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -152,11 +149,9 @@ async def get_file_original(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file original: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file original.",
-        )
+        msg = "Failed to retrieve file original"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.put(
@@ -198,10 +193,9 @@ async def update_file_original(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update file original",
-            )
+            detail = "Failed to update file original (no row returned)"
+            logger.error(f"update_file_original: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_update_file_original() - status={row.status}, message={row.message}")
@@ -218,8 +212,6 @@ async def update_file_original(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to update file original: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update file original.",
-        )
+        msg = "Failed to update file original"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

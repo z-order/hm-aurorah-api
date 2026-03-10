@@ -31,9 +31,14 @@ langchain-core
 # Redis
 redis
 
+# File text extraction & document generation
+pymupdf # for PDF
+python-docx # for DOCX
+python-pptx # for PPTX
+openpyxl # for XLSX
+striprtf # for RTF
+
 # File download (document generation)
-python-docx
-openpyxl
 fpdf2
 uharfbuzz
 

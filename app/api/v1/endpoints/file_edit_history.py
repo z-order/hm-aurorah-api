@@ -77,10 +77,9 @@ async def create_file_edit_history(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file edit history",
-            )
+            detail = "Failed to create file edit history (no row returned)"
+            logger.error(f"create_file_edit_history: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         return {"history_id": row.history_id}
 
@@ -90,11 +89,9 @@ async def create_file_edit_history(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file edit history: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file edit history.",
-        )
+        msg = "Failed to create file edit history"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -155,8 +152,6 @@ async def get_file_edit_history(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file edit history: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file edit history.",
-        )
+        msg = "Failed to retrieve file edit history"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)

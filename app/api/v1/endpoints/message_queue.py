@@ -5,7 +5,7 @@ Message Queue endpoints using Redis Streams
 import logging
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from uuid_utils import uuid7
@@ -88,8 +88,9 @@ async def send_message_to_channel(channel_id: str, payload: MessageIn) -> Messag
         )
 
     except Exception as e:
-        logger.error(f"Error sending message: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to send message: {str(e)}")
+        msg = "Failed to send message"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get("/channels/{channel_id}/events", summary="Subscribe to channel events (SSE)")
@@ -172,8 +173,9 @@ async def subscribe_to_channel_events(
                     break
 
         except Exception as e:
-            logger.error(f"Error in SSE stream: {e}", exc_info=True)
-            yield await sse_event({"type": "error", "message": str(e)}, event="error")
+            msg = "Error in SSE stream"
+            logger.error(f"{msg}: {e}", exc_info=True)
+            yield await sse_event({"type": "error", "message": msg}, event="error")
 
         finally:
             logger.info(f"SSE stream closed for channel '{channel_id}', consumer '{consumer_id}'")
@@ -216,8 +218,9 @@ async def get_channel_info(channel_id: str):
         )
 
     except Exception as e:
-        logger.error(f"Error getting channel info: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get channel info: {str(e)}")
+        msg = "Failed to get channel info"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.delete("/channels/{channel_id}", summary="Delete channel")
@@ -241,8 +244,9 @@ async def delete_channel(channel_id: str):
         return JSONResponse(content={"channel_id": channel_id, "deleted": deleted > 0})
 
     except Exception as e:
-        logger.error(f"Error deleting channel: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to delete channel: {str(e)}")
+        msg = "Failed to delete channel"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 # ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS au_file_nodes (
     file_url VARCHAR(1024) NULL,
     file_ext VARCHAR(32) NOT NULL,
     file_size BIGINT NOT NULL,
-    mime_type VARCHAR(32) NULL,
+    mime_type VARCHAR(128) NULL,
     description VARCHAR(512) NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),

@@ -72,10 +72,9 @@ async def create_file_checkpoint(
         await db.commit()
 
         if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create file checkpoint",
-            )
+            detail = "Failed to create file checkpoint (no row returned)"
+            logger.error(f"create_file_checkpoint: 500={detail}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
         if row.status == 404:
             logger.info(f"pg-function: au_create_file_checkpoint() - status={row.status}, message={row.message}")
@@ -92,11 +91,9 @@ async def create_file_checkpoint(
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create file checkpoint: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file checkpoint.",
-        )
+        msg = "Failed to create file checkpoint"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
 @router.get(
@@ -147,8 +144,6 @@ async def get_file_checkpoint(
         ]
 
     except Exception as e:
-        logger.error(f"Failed to retrieve file checkpoint: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve file checkpoint.",
-        )
+        msg = "Failed to retrieve file checkpoint"
+        logger.error(f"{msg}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
