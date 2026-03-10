@@ -103,6 +103,7 @@ jobs:
                   REDIS_URL=${{ vars.REDIS_URL }}
                   POSTGRES_URL=${{ secrets.POSTGRES_URL }}
                   LANGGRAPH_API_URL=${{ vars.LANGGRAPH_API_URL }}
+                  UPSTAGE_API_KEY=${{ secrets.UPSTAGE_API_KEY }}
                   EOF
                   "
 
