@@ -180,6 +180,8 @@ RETURNS TABLE (
   file_size BIGINT,
   mime_type VARCHAR(128),
   description VARCHAR(512),
+  file_status VARCHAR(32),
+  file_message TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -192,6 +194,7 @@ BEGIN
          o.original_text, o.original_text_modified,
          t.translation_id_1st, t.translation_id_2nd, t.proofreading_id,
          n.file_type, n.file_name, n.file_url, n.file_ext, n.file_size, n.mime_type, n.description,
+         n.status AS file_status, n.message AS file_message,
          t.created_at, t.updated_at
   FROM au_file_tasks t
   LEFT JOIN au_file_original o ON o.original_id = t.original_id

@@ -42,6 +42,7 @@ from app.utils.utils_http import read_binary_file_from_url, read_file_header_fro
 from app.utils.utils_text import analyze_raw_text_to_json
 
 from .file_task_extract import bg_atask_extract_file_text
+from .file_task_helpers import update_file_node_status
 
 logger = get_logger(__name__, logging.INFO)
 
@@ -101,6 +102,7 @@ async def open_file_task(
         if not file_row.file_url:
             detail = "File has no URL"
             logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+            await update_file_node_status(file_id, "failed", detail, db)
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
         # Step 3: Validate file type
@@ -109,6 +111,7 @@ async def open_file_task(
         except ValueError as e:
             detail = str(e)
             logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+            await update_file_node_status(file_id, "failed", detail, db)
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
         # Step 3b: Magic bytes validation for non-text files
@@ -122,6 +125,7 @@ async def open_file_task(
             if not validate_file_magic_bytes(file_header, file_row.file_ext):
                 detail = f"File content does not match extension {file_row.file_ext}"
                 logger.warning(f"open_file_task: file_id={file_id}, 422={detail}")
+                await update_file_node_status(file_id, "failed", detail, db)
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
         # =====================================================================
@@ -153,6 +157,7 @@ async def open_file_task(
         background_tasks.add_task(
             bg_atask_extract_file_text,
             rsmq_channel_id=rsmq_channel_id,
+            file_id=file_id,
             original_id=task_data["original_id"],
             file_url=file_row.file_url,
             file_ext=file_row.file_ext,
@@ -168,6 +173,7 @@ async def open_file_task(
     except Exception as e:
         msg = "Failed to open file task"
         logger.error(f"{msg}: {e}", exc_info=True)
+        await update_file_node_status(file_id, "failed", msg, db)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
 
@@ -311,6 +317,7 @@ async def get_file_task_with_details(
                        original_text, original_text_modified,
                        translation_id_1st, translation_id_2nd, proofreading_id,
                        file_type, file_name, file_url, file_ext, file_size, mime_type, description,
+                       file_status, file_message,
                        created_at, updated_at
                 FROM au_get_file_task_with_details(:file_id)
             """),
@@ -339,6 +346,8 @@ async def get_file_task_with_details(
             "file_size": row.file_size,
             "mime_type": row.mime_type,
             "description": row.description,
+            "status": row.file_status,
+            "message": row.file_message,
             "created_at": row.created_at,
             "updated_at": row.updated_at,
         }

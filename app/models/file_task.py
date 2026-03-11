@@ -92,5 +92,7 @@ class FileTaskReadWithDetails(SQLModel):
     file_size: int
     mime_type: str | None = None
     description: str | None = None
+    status: str = "ready"
+    message: str | None = None
     created_at: datetime
     updated_at: datetime

@@ -37,6 +37,8 @@ from app.utils.utils_file_validate import FileCategory, validate_file_extension
 from app.utils.utils_http import read_binary_file_from_url
 from app.utils.utils_text import analyze_raw_text_to_json
 
+from .file_task_helpers import update_file_node_status
+
 logger = get_logger(__name__, logging.DEBUG)
 
 _EXTRACTORS: dict[FileCategory, Callable[[bytes], str]] = {
@@ -57,6 +59,7 @@ _EXTRACTORS: dict[FileCategory, Callable[[bytes], str]] = {
 
 async def bg_atask_extract_file_text(
     rsmq_channel_id: str,
+    file_id: uuid.UUID,
     original_id: uuid.UUID,
     file_url: str,
     file_ext: str,
@@ -67,6 +70,7 @@ async def bg_atask_extract_file_text(
 
     Args:
         rsmq_channel_id: Redis Stream MQ channel ID for progress streaming
+        file_id: The file node ID in au_file_nodes (for status updates)
         original_id: The original record ID in au_file_original
         file_url: CDN URL of the file to extract text from
         file_ext: File extension (e.g. ".pdf", ".docx")
@@ -119,6 +123,7 @@ async def bg_atask_extract_file_text(
 
     except NotImplementedError as e:
         logger.error(f"Text extraction not implemented: {str(e)}")
+        await update_file_node_status(file_id, "failed", str(e))
         try:
             error_mq = RedisStreamMessageQueue(
                 ttl_seconds=settings.REDIS_STREAM_MQ_TTL_SECONDS,
@@ -130,6 +135,7 @@ async def bg_atask_extract_file_text(
 
     except ValueError as e:
         logger.error(f"Text extraction validation error: {str(e)}")
+        await update_file_node_status(file_id, "failed", str(e))
         try:
             error_mq = RedisStreamMessageQueue(
                 ttl_seconds=settings.REDIS_STREAM_MQ_TTL_SECONDS,
@@ -140,17 +146,16 @@ async def bg_atask_extract_file_text(
             pass
 
     except Exception as e:
+        error_type = type(e).__name__
+        error_message = f"Text extraction failed ({error_type}). Check server logs."
         logger.error(f"Text extraction failed: {str(e)}", exc_info=True)
+        await update_file_node_status(file_id, "failed", error_message)
         try:
-            error_type = type(e).__name__
             error_mq = RedisStreamMessageQueue(
                 ttl_seconds=settings.REDIS_STREAM_MQ_TTL_SECONDS,
                 maxlen=settings.REDIS_STREAM_MQ_MAXLEN,
             )
-            await error_mq.send(rsmq_channel_id, {
-                "type": "error",
-                "message": f"Text extraction failed ({error_type}). Check server logs.",
-            })
+            await error_mq.send(rsmq_channel_id, {"type": "error", "message": error_message})
         except Exception:
             pass
 

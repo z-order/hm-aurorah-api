@@ -41,6 +41,8 @@ class FileNodeBase(SQLModel):
     file_size: int = Field(default=0)
     mime_type: str | None = Field(default=None, max_length=128)
     description: str | None = Field(default=None, max_length=512)
+    status: str = Field(default="ready", max_length=32)
+    message: str | None = Field(default=None)
 
 
 class FileNode(FileNodeBase, table=True):

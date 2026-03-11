@@ -172,7 +172,8 @@ async def get_file_nodes(
             text("""
                 SELECT file_id, owner_id, parent_file_id, file_type,
                        file_name, file_url, file_ext, file_size,
-                       mime_type, description, created_at, updated_at, deleted_at
+                       mime_type, description, status, message,
+                       created_at, updated_at, deleted_at
                 FROM au_get_files(:owner_id, :option, :parent_file_id)
             """),
             {
@@ -195,6 +196,8 @@ async def get_file_nodes(
                 "file_size": row.file_size,
                 "mime_type": row.mime_type,
                 "description": row.description,
+                "status": row.status,
+                "message": row.message,
                 "created_at": row.created_at,
                 "updated_at": row.updated_at,
                 "deleted_at": row.deleted_at,

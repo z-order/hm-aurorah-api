@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS au_file_nodes (
     file_size BIGINT NOT NULL,
     mime_type VARCHAR(128) NULL,
     description VARCHAR(512) NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'ready',
+    message TEXT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     deleted_at TIMESTAMPTZ NULL

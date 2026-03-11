@@ -104,7 +104,9 @@ $$;
 CREATE OR REPLACE FUNCTION au_update_file(
   p_file_id UUID,
   p_file_name VARCHAR(512) DEFAULT NULL,
-  p_description VARCHAR(512) DEFAULT NULL
+  p_description VARCHAR(512) DEFAULT NULL,
+  p_status VARCHAR(32) DEFAULT NULL,
+  p_message TEXT DEFAULT NULL
 )
 RETURNS TABLE (
   status INT,
@@ -139,6 +141,8 @@ BEGIN
   SET
     file_name = COALESCE(p_file_name, file_name),
     description = COALESCE(p_description, description),
+    status = COALESCE(p_status, au_file_nodes.status),
+    message = COALESCE(p_message, au_file_nodes.message),
     updated_at = now()
   WHERE au_file_nodes.file_id = p_file_id
     AND deleted_at IS NULL;
@@ -375,6 +379,8 @@ RETURNS TABLE (
   file_size BIGINT,
   mime_type VARCHAR(128),
   description VARCHAR(512),
+  status VARCHAR(32),
+  message TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   deleted_at TIMESTAMPTZ
@@ -388,7 +394,8 @@ BEGIN
     RETURN QUERY
     SELECT n.file_id, n.owner_id, n.parent_file_id, n.file_type,
            n.file_name, n.file_url, n.file_ext, n.file_size,
-           n.mime_type, n.description, n.created_at, n.updated_at, n.deleted_at
+           n.mime_type, n.description, n.status, n.message,
+           n.created_at, n.updated_at, n.deleted_at
     FROM au_file_nodes n
     WHERE n.owner_id = p_owner_id
       AND n.file_type = 'file'
@@ -400,7 +407,8 @@ BEGIN
     RETURN QUERY
     SELECT n.file_id, n.owner_id, n.parent_file_id, n.file_type,
            n.file_name, n.file_url, n.file_ext, n.file_size,
-           n.mime_type, n.description, n.created_at, n.updated_at, n.deleted_at
+           n.mime_type, n.description, n.status, n.message,
+           n.created_at, n.updated_at, n.deleted_at
     FROM au_file_acl a
     INNER JOIN au_file_nodes n ON n.file_id = a.file_id
     WHERE a.principal_id = p_owner_id::UUID
@@ -414,7 +422,8 @@ BEGIN
     RETURN QUERY
     SELECT n.file_id, n.owner_id, n.parent_file_id, n.file_type,
            n.file_name, n.file_url, n.file_ext, n.file_size,
-           n.mime_type, n.description, n.created_at, n.updated_at, n.deleted_at
+           n.mime_type, n.description, n.status, n.message,
+           n.created_at, n.updated_at, n.deleted_at
     FROM au_file_nodes n
     WHERE n.owner_id = p_owner_id
       AND n.file_type = 'file'
@@ -426,7 +435,8 @@ BEGIN
     RETURN QUERY
     SELECT n.file_id, n.owner_id, n.parent_file_id, n.file_type,
         n.file_name, n.file_url, n.file_ext, n.file_size,
-        n.mime_type, n.description, n.created_at, n.updated_at, n.deleted_at
+        n.mime_type, n.description, n.status, n.message,
+        n.created_at, n.updated_at, n.deleted_at
     FROM au_file_nodes n
     WHERE n.owner_id = p_owner_id
     AND n.parent_file_id IS NOT DISTINCT FROM p_parent_file_id  -- Compare columns with NULL (NULL = NULL is TRUE)
