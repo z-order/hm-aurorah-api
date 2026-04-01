@@ -124,32 +124,30 @@ def extract_text_from_hwpx(file_bytes: bytes) -> str:
 
 
 # =============================================================================
-# PDF  (PyMuPDF + Upstage OCR fallback)
+# PDF  (PyMuPDF + Google OCR(Document AI) + Upstage OCR fallback)
+#
+# Google OCR(Document AI): https://docs.cloud.google.com/document-ai/docs/overview
+# Upstage OCR: https://console.upstage.ai/docs/getting-started?api=document-parsing
 # =============================================================================
 
-_PDF_OCR_MIN_CHARS_PER_PAGE = 50
-_PDF_OCR_SAMPLE_PAGES = 3
 
-
-def extract_text_from_pdf(file_bytes: bytes) -> str:
+def extract_text_from_pdf(file_bytes: bytes, scan_mode: str = "text") -> str:
     """
-    Extract text from PDF with auto-detection.
+    Extract text from PDF using the chosen scan mode.
 
-    Tries PyMuPDF text extraction on the first few pages. If extracted text
-    is too short (likely a scanned/image PDF), falls back to Upstage OCR API.
-    Pages separated by \\n\\n.
+    Args:
+        file_bytes: Raw PDF bytes
+        scan_mode: "text" (PyMuPDF direct), "google_ocr" (Google Document AI),
+                   or "upstage_ocr" (Upstage Document Digitization)
     """
-    sample_text = _extract_text_from_pdf_pymupdf(file_bytes, max_pages=_PDF_OCR_SAMPLE_PAGES)
-
-    sample_pages = min(_PDF_OCR_SAMPLE_PAGES, max(1, sample_text.count("\n\n") + 1))
-    avg_chars = len(sample_text.replace("\n", "")) / sample_pages if sample_pages > 0 else 0
-
-    if avg_chars >= _PDF_OCR_MIN_CHARS_PER_PAGE:
-        logger.info(f"PDF text extraction: PyMuPDF ({avg_chars:.0f} chars/page avg)")
-        return _extract_text_from_pdf_pymupdf(file_bytes)
-
-    logger.info(f"PDF text extraction: fallback to OCR ({avg_chars:.0f} chars/page avg)")
-    return _extract_text_from_pdf_ocr(file_bytes)
+    if scan_mode == "google_ocr":
+        logger.info("PDF text extraction: Google OCR")
+        return _extract_text_from_pdf_google_ocr(file_bytes)
+    if scan_mode == "upstage_ocr":
+        logger.info("PDF text extraction: Upstage OCR")
+        return _extract_text_from_pdf_upstage_ocr(file_bytes)
+    logger.info("PDF text extraction: PyMuPDF (text layer)")
+    return _extract_text_from_pdf_pymupdf(file_bytes)
 
 
 def _extract_text_from_pdf_pymupdf(file_bytes: bytes, max_pages: int | None = None) -> str:
@@ -170,7 +168,7 @@ def _extract_text_from_pdf_pymupdf(file_bytes: bytes, max_pages: int | None = No
     return "\n\n".join(page_texts)
 
 
-def _extract_text_from_pdf_ocr(file_bytes: bytes) -> str:
+def _extract_text_from_pdf_upstage_ocr(file_bytes: bytes) -> str:
     """
     Extract text from PDF using Upstage Document OCR API.
 
@@ -212,6 +210,46 @@ def _extract_text_from_pdf_ocr(file_bytes: bytes) -> str:
 
     logger.warning(f"Unexpected OCR response structure: {list(result.keys())}")
     return str(result)
+
+
+def _extract_text_from_pdf_google_ocr(file_bytes: bytes) -> str:
+    """
+    Extract text from PDF using Google Document AI (Enterprise Document OCR).
+
+    Sends the entire PDF to the Document AI processor in a single request.
+    Auth is handled via the GOOGLE_APPLICATION_CREDENTIALS env var.
+
+    API reference: https://docs.cloud.google.com/document-ai/docs/send-request
+    """
+    from google.api_core.client_options import ClientOptions  # type: ignore[import-untyped]
+    from google.cloud import documentai  # type: ignore[import-untyped]
+
+    project_id = settings.GOOGLE_CLOUD_PROJECT_ID
+    location = settings.GOOGLE_CLOUD_LOCATION
+    processor_id = settings.GOOGLE_DOCUMENT_AI_PROCESSOR_ID
+
+    if not project_id or not processor_id:
+        raise ValueError(
+            "GOOGLE_CLOUD_PROJECT_ID and GOOGLE_DOCUMENT_AI_PROCESSOR_ID must be configured for Google OCR extraction."
+        )
+
+    opts = ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
+    client = documentai.DocumentProcessorServiceClient(client_options=opts)
+    name = client.processor_path(project_id, location, processor_id)
+
+    raw_document = documentai.RawDocument(
+        content=file_bytes,
+        mime_type="application/pdf",
+    )
+
+    request = documentai.ProcessRequest(
+        name=name,
+        raw_document=raw_document,
+        field_mask="text",
+    )
+
+    result = client.process_document(request=request)  # type: ignore[no-untyped-call]
+    return result.document.text
 
 
 # =============================================================================

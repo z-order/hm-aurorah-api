@@ -25,16 +25,26 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_utils import uuid7
 
 from app.core.database import get_db
 from app.core.logger import get_logger
-from app.models.file_task import FileTaskCreate, FileTaskRead, FileTaskReadWithDetails, FileTaskUpdate
+from app.models.file_task import (
+    FileTaskCreate,
+    FileTaskOpenRequest,
+    FileTaskOpenScanResponse,
+    FileTaskRead,
+    FileTaskReadWithDetails,
+    FileTaskUpdate,
+    ScanMode,
+)
 from app.utils.utils_file_validate import (
     SYNC_CATEGORIES,
     ZIP_CATEGORIES,
+    FileCategory,
     validate_file_extension,
     validate_file_magic_bytes,
 )
@@ -54,6 +64,7 @@ router: APIRouter = APIRouter()
     response_model=FileTaskRead,
     status_code=status.HTTP_200_OK,
     responses={
+        202: {"description": "PDF scan mode selection required", "model": FileTaskOpenScanResponse},
         404: {"description": "File not found"},
         422: {"description": "File has no URL or unsupported file type"},
         500: {"description": "Internal server error"},
@@ -63,8 +74,9 @@ router: APIRouter = APIRouter()
 async def open_file_task(
     file_id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request_body: FileTaskOpenRequest = FileTaskOpenRequest(),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> dict[str, Any] | JSONResponse:
     """
     Open file task (get existing or create new)
 
@@ -72,7 +84,9 @@ async def open_file_task(
     2. If not found, get file_url and file_ext from au_file_nodes
     3. Validate file type (extension + magic bytes)
     4a. Sync path (text files): extract inline, create task, return
-    4b. Async path (docx/pptx/xlsx/hwpx/pdf/epub/video): create task with
+    4b. PDF path: if scan_mode not provided, return 202 asking frontend to choose;
+        otherwise proceed with chosen extraction mode
+    4c. Async path (docx/pptx/xlsx/hwpx/epub/video): create task with
         placeholder, launch background extraction, return with rsmq_channel_id
     """
 
@@ -144,7 +158,17 @@ async def open_file_task(
             return await get_file_task(file_id, db)
 
         # =====================================================================
-        # Step 4b: ASYNC PATH (docx/pptx/xlsx/hwpx/pdf/epub/video)
+        # Step 4b: PDF PATH — requires explicit scan mode from the user
+        # =====================================================================
+        if category == FileCategory.PDF and request_body.scan_mode is None:
+            logger.info(f"open_file_task: file_id={file_id}, 202=needs_scan_mode")
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content={"needs_scan_mode": True, "file_id": str(file_id)},
+            )
+
+        # =====================================================================
+        # Step 4c: ASYNC PATH (docx/pptx/xlsx/hwpx/pdf/epub/video)
         # =====================================================================
         placeholder_text: dict[str, Any] = {"segments": []}
         file_task_data = FileTaskCreate(file_id=file_id, original_text=placeholder_text)
@@ -154,6 +178,8 @@ async def open_file_task(
 
         rsmq_channel_id = str(uuid7())
 
+        scan_mode_value = request_body.scan_mode.value if request_body.scan_mode else ScanMode.TEXT.value
+
         background_tasks.add_task(
             bg_atask_extract_file_text,
             rsmq_channel_id=rsmq_channel_id,
@@ -162,6 +188,7 @@ async def open_file_task(
             file_url=file_row.file_url,
             file_ext=file_row.file_ext,
             file_content=file_content_for_extract,
+            scan_mode=scan_mode_value,
         )
 
         task_data["rsmq_channel_id"] = rsmq_channel_id

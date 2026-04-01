@@ -59,6 +59,11 @@ ENCLOSURE_PAIRS: list[tuple[str, str]] = [
 # Rare self-closing symbols you may want to treat as their own pair
 SELF_CLOSING: set[str] = {"⦿"}
 
+# Right-side only characters from ENCLOSURE_PAIRS (excluding self-paired
+# chars like ASCII " and ' which serve as both opener and closer).
+# Used to detect orphan closers like "1)" "2)" that have no matching opener.
+_CLOSERS: set[str] = {right for left, right in ENCLOSURE_PAIRS if left != right}
+
 
 def _build_enclosure_map() -> dict[str, str]:
     d: dict[str, str] = {}
@@ -480,7 +485,10 @@ def _mark_sentence_in_line(
         ('┼1┼She said, ┼2┼"Hello there!"┼3┼ and walked away.', 4)
     """
     indices_of_starts = _sentence_starts_in_one_line(
-        line, start_on_top_open=start_on_top_open, end_on_top_close=end_on_top_close
+        line,
+        min_sentence_len=min_sentence_len,
+        start_on_top_open=start_on_top_open,
+        end_on_top_close=end_on_top_close,
     )
 
     marked: list[str] = []
@@ -526,6 +534,7 @@ def _mark_sentence_in_line(
 def _sentence_starts_in_one_line(
     line: str,
     *,
+    min_sentence_len: int = DEFAULT_MIN_SENTENCE_LEN,
     start_on_top_open: bool,
     end_on_top_close: bool,
 ) -> list[int]:
@@ -602,8 +611,13 @@ def _sentence_starts_in_one_line(
     enclosures = _build_enclosure_map()
     opening = set(enclosures.keys())
 
-    def match_boundary(i: int, stack: list[str]) -> int:
-        if stack:
+    def match_boundary(i: int, stack: list[tuple[str, int]]) -> int:
+        # Inside a short enclosure (distance from opener < min_sentence_len),
+        # suppress punctuation so periods inside e.g. "(Web)" or "[그림 1.]"
+        # don't split. Once the distance exceeds min_sentence_len the
+        # enclosure is likely unmatched or very long, so resume splitting
+        # to avoid producing one giant segment.
+        if stack and (i - stack[-1][1]) < min_sentence_len:
             return -1
 
         # Ellipsis "..."
@@ -633,12 +647,12 @@ def _sentence_starts_in_one_line(
         return -1
 
     starts: list[int] = [0]
-    stack: list[str] = []
+    stack: list[tuple[str, int]] = []
     i = 0
     while i < n:
         c = line[i]
 
-        if stack and c == stack[-1]:
+        if stack and c == stack[-1][0]:
             stack.pop()
             if end_on_top_close and not stack:
                 next_pos = i + 1
@@ -657,9 +671,18 @@ def _sentence_starts_in_one_line(
                     i += 1
                     continue
 
+            # Skip unmatched closers -- e.g. "1)" "2)" "3)" numbering
+            # patterns where ")" appears without a preceding "(" on the
+            # stack. Without this guard the orphan closer pushes onto
+            # the stack and corrupts enclosure tracking, suppressing all
+            # downstream "." "?" "!" sentence boundary detection.
+            if c in _CLOSERS and (not stack or stack[-1][0] != c):
+                i += 1
+                continue
+
             if start_on_top_open and not stack and i != starts[-1]:
                 starts.append(i)
-            stack.append(enclosures[c])
+            stack.append((enclosures[c], i))
 
         end = match_boundary(i, stack)
         if end != -1:

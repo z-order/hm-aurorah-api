@@ -64,6 +64,7 @@ async def bg_atask_extract_file_text(
     file_url: str,
     file_ext: str,
     file_content: bytes | None = None,
+    scan_mode: str = "text",
 ) -> None:
     """
     Async background task for extracting text from a binary file.
@@ -75,6 +76,7 @@ async def bg_atask_extract_file_text(
         file_url: CDN URL of the file to extract text from
         file_ext: File extension (e.g. ".pdf", ".docx")
         file_content: Optional pre-downloaded file bytes (reused from validation for ZIP formats)
+        scan_mode: PDF scan mode ("text", "google_ocr", "upstage_ocr"); ignored for non-PDF formats
     """
     try:
         mq = RedisStreamMessageQueue(
@@ -99,6 +101,8 @@ async def bg_atask_extract_file_text(
 
         if category == FileCategory.VIDEO:
             raw_text = extract_text_from_video(file_url)
+        elif category == FileCategory.PDF:
+            raw_text = extract_text_from_pdf(file_bytes, scan_mode=scan_mode)
         else:
             extractor = _EXTRACTORS.get(category)
             if extractor is None:

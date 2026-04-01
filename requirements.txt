@@ -33,6 +33,7 @@ redis
 
 # File text extraction & document generation
 pymupdf # for PDF
+google-cloud-documentai # for Google Document AI OCR
 python-docx # for DOCX
 python-pptx # for PPTX
 openpyxl # for XLSX

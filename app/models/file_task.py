@@ -13,12 +13,21 @@ See: scripts/schema-functions/schema-public.file.task.sql
 
 import uuid
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel  # type: ignore[attr-defined]
 
 from app.models.file_node import FileType
+
+
+class ScanMode(StrEnum):
+    """PDF scan mode options"""
+
+    TEXT = "text"
+    GOOGLE_OCR = "google_ocr"
+    UPSTAGE_OCR = "upstage_ocr"
 
 
 class FileTaskBase(SQLModel):
@@ -64,6 +73,19 @@ class FileTaskUpdate(SQLModel):
     translation_id_1st: uuid.UUID | None = None
     translation_id_2nd: uuid.UUID | None = None
     proofreading_id: uuid.UUID | None = None
+
+
+class FileTaskOpenScanResponse(SQLModel):
+    """Response when PDF scan mode must be selected before opening"""
+
+    needs_scan_mode: bool = True
+    file_id: uuid.UUID
+
+
+class FileTaskOpenRequest(SQLModel):
+    """Request body for open_file_task endpoint"""
+
+    scan_mode: ScanMode | None = None
 
 
 class FileTaskRead(FileTaskBase):
