@@ -147,6 +147,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     UPSTAGE_API_KEY: str | None = None
     # Google Document AI Settings for Google OCR(Document AI)
+    GCP_DOCUMENTAI_KEY: str | None = None
     GOOGLE_CLOUD_PROJECT_ID: str | None = None
     GOOGLE_CLOUD_LOCATION: str = "us"
     GOOGLE_DOCUMENT_AI_PROCESSOR_ID: str | None = None

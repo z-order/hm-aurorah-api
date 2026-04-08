@@ -8,6 +8,7 @@ add_sentence_markers() for final sentence-level segmentation.
 """
 
 import io
+import json
 import logging
 import xml.etree.ElementTree as ET
 import zipfile
@@ -16,6 +17,9 @@ from typing import cast
 import fitz  # type: ignore[import-untyped]
 import httpx
 from docx import Document
+from google.api_core.client_options import ClientOptions  # type: ignore[import-untyped]
+from google.cloud import documentai  # type: ignore[import-untyped]
+from google.oauth2 import service_account  # type: ignore[import-untyped]
 from openpyxl import load_workbook
 from pptx import Presentation
 from striprtf.striprtf import rtf_to_text  # type: ignore[import-untyped]
@@ -217,13 +221,11 @@ def _extract_text_from_pdf_google_ocr(file_bytes: bytes) -> str:
     Extract text from PDF using Google Document AI (Enterprise Document OCR).
 
     Sends the entire PDF to the Document AI processor in a single request.
-    Auth is handled via the GOOGLE_APPLICATION_CREDENTIALS env var.
+    Auth is handled via the GCP_DOCUMENTAI_KEY env var (JSON string) or
+    falls back to GOOGLE_APPLICATION_CREDENTIALS (file path).
 
     API reference: https://docs.cloud.google.com/document-ai/docs/send-request
     """
-    from google.api_core.client_options import ClientOptions  # type: ignore[import-untyped]
-    from google.cloud import documentai  # type: ignore[import-untyped]
-
     project_id = settings.GOOGLE_CLOUD_PROJECT_ID
     location = settings.GOOGLE_CLOUD_LOCATION
     processor_id = settings.GOOGLE_DOCUMENT_AI_PROCESSOR_ID
@@ -233,8 +235,14 @@ def _extract_text_from_pdf_google_ocr(file_bytes: bytes) -> str:
             "GOOGLE_CLOUD_PROJECT_ID and GOOGLE_DOCUMENT_AI_PROCESSOR_ID must be configured for Google OCR extraction."
         )
 
+    credentials = None
+    if settings.GCP_DOCUMENTAI_KEY:
+        credentials = service_account.Credentials.from_service_account_info(  # type: ignore[no-untyped-call]
+            json.loads(settings.GCP_DOCUMENTAI_KEY)
+        )
+
     opts = ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
-    client = documentai.DocumentProcessorServiceClient(client_options=opts)
+    client = documentai.DocumentProcessorServiceClient(client_options=opts, credentials=credentials)
     name = client.processor_path(project_id, location, processor_id)
 
     raw_document = documentai.RawDocument(

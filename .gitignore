@@ -228,3 +228,6 @@ $RECYCLE.BIN/
 *.swo
 # Emacs/Gedit/Nano backup files
 *~
+
+# GCP credentials
+deployment/credentials/

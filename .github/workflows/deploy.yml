@@ -104,6 +104,10 @@ jobs:
                   POSTGRES_URL=${{ secrets.POSTGRES_URL }}
                   LANGGRAPH_API_URL=${{ vars.LANGGRAPH_API_URL }}
                   UPSTAGE_API_KEY=${{ secrets.UPSTAGE_API_KEY }}
+                  GCP_DOCUMENTAI_KEY=${{ secrets.GCP_DOCUMENTAI_KEY }}
+                  GOOGLE_CLOUD_PROJECT_ID=${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
+                  GOOGLE_CLOUD_LOCATION=${{ vars.GOOGLE_CLOUD_LOCATION }}
+                  GOOGLE_DOCUMENT_AI_PROCESSOR_ID=${{ vars.GOOGLE_DOCUMENT_AI_PROCESSOR_ID }}
                   EOF
                   "
 
