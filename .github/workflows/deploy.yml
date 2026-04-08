@@ -104,12 +104,30 @@ jobs:
                   POSTGRES_URL=${{ secrets.POSTGRES_URL }}
                   LANGGRAPH_API_URL=${{ vars.LANGGRAPH_API_URL }}
                   UPSTAGE_API_KEY=${{ secrets.UPSTAGE_API_KEY }}
-                  GCP_DOCUMENTAI_KEY=${{ secrets.GCP_DOCUMENTAI_KEY }}
                   GOOGLE_CLOUD_PROJECT_ID=${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
                   GOOGLE_CLOUD_LOCATION=${{ vars.GOOGLE_CLOUD_LOCATION }}
                   GOOGLE_DOCUMENT_AI_PROCESSOR_ID=${{ vars.GOOGLE_DOCUMENT_AI_PROCESSOR_ID }}
                   EOF
                   "
+
+            # GCP_DOCUMENTAI_KEY is a JSON service account credential containing
+            # double quotes and literal \n sequences in the private_key field.
+            # It MUST be written separately from the heredoc step above because:
+            #   - The heredoc is executed inside an SSH double-quoted command string
+            #   - The runner shell interprets double quotes and \n during expansion,
+            #     stripping quotes and converting \n to actual newlines
+            #   - This corrupts the JSON, e.g. {"type":"service_account",...}
+            #     becomes {type:service_account,...} which fails json.loads()
+            # Using env: + printf '%s' preserves the value byte-for-byte:
+            #   - env: passes the secret into a shell variable without interpretation
+            #   - printf '%s' outputs the variable literally (unlike echo which
+            #     interprets \n as newlines in some shells)
+            - name: Append GCP_DOCUMENTAI_KEY to .env.${{ vars.DEPLOY_ENV || 'production' }}
+              env:
+                  GCP_DOCUMENTAI_KEY: ${{ secrets.GCP_DOCUMENTAI_KEY }}
+              run: |
+                  printf 'GCP_DOCUMENTAI_KEY=%s\n' "$GCP_DOCUMENTAI_KEY" \
+                    | ssh -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cat >> ${{ secrets.DEST }}/deployment/.env.${{ vars.DEPLOY_ENV || 'production' }}"
 
             - name: Run remote deploy script
               run: |

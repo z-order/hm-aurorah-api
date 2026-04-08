@@ -237,8 +237,15 @@ def _extract_text_from_pdf_google_ocr(file_bytes: bytes) -> str:
 
     credentials = None
     if settings.GCP_DOCUMENTAI_KEY:
+        try:
+            service_info = json.loads(settings.GCP_DOCUMENTAI_KEY)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ValueError(
+                f"GCP_DOCUMENTAI_KEY contains invalid JSON: {e}. "
+                "Ensure the value uses double quotes and is properly escaped."
+            ) from e
         credentials = service_account.Credentials.from_service_account_info(  # type: ignore[no-untyped-call]
-            json.loads(settings.GCP_DOCUMENTAI_KEY)
+            service_info
         )
 
     opts = ClientOptions(api_endpoint=f"{location}-documentai.googleapis.com")
