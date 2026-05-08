@@ -447,6 +447,58 @@ END;
 $$;
 
 
+/*  au_get_file() function
+ *
+ *  Example usages:
+ *    au_get_file('user-abc', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');  -- Get a single file by p_file_id
+ */
+CREATE OR REPLACE FUNCTION au_get_file(
+  p_owner_id TEXT,   -- Requesting user (for access check)
+  p_file_id UUID     -- Target file/folder to look up
+)
+RETURNS TABLE (
+  file_id UUID,
+  owner_id TEXT,
+  parent_file_id UUID,
+  file_type VARCHAR(32),
+  file_name VARCHAR(512),
+  file_url VARCHAR(1024),
+  file_ext VARCHAR(32),
+  file_size BIGINT,
+  mime_type VARCHAR(128),
+  description VARCHAR(512),
+  status VARCHAR(32),
+  message TEXT,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  deleted_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE  -- Read-only, no side effects (safe for query planner caching)
+AS $$
+BEGIN
+  -- Returns 0 rows when the file is missing, soft-deleted, or not accessible
+  -- Access rule: requester must be the owner OR have an ACL grant on the file
+  RETURN QUERY
+  SELECT n.file_id, n.owner_id, n.parent_file_id, n.file_type,
+         n.file_name, n.file_url, n.file_ext, n.file_size,
+         n.mime_type, n.description, n.status, n.message,
+         n.created_at, n.updated_at, n.deleted_at
+  FROM au_file_nodes n
+  WHERE n.file_id = p_file_id
+    AND n.deleted_at IS NULL  -- Exclude trashed/soft-deleted rows
+    AND (
+      n.owner_id = p_owner_id  -- Owner has full access
+      OR EXISTS (              -- Otherwise must be granted via ACL
+        SELECT 1 FROM au_file_acl a
+        WHERE a.file_id = n.file_id
+          AND a.principal_id = p_owner_id::UUID
+      )
+    );
+END;
+$$;
+
+
 -- F_I1: For 'all-files' option (owner's files only)
 -- Query: WHERE owner_id = ? ORDER BY updated_at DESC
 CREATE INDEX IF NOT EXISTS idx_au_file_nodes_F_I1

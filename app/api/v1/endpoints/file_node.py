@@ -1,14 +1,15 @@
 """
 File node endpoints
 
-Endpoint                    SQL Function
---------------------------  ------------------
-POST /                      au_create_file()
-GET /{owner_id}             au_get_files()
-PUT /{file_id}              au_update_file()
-DELETE /{file_id}           au_delete_file()
-POST /{file_id}/duplicate   au_duplicate_file()
-PUT /{file_id}/move         au_move_file()
+Endpoint                          SQL Function
+-------------------------------   ------------------
+POST /                            au_create_file()
+GET /{owner_id}                   au_get_files()
+GET /{owner_id}?file_id={file_id} au_get_file()
+PUT /{file_id}                    au_update_file()
+DELETE /{file_id}                 au_delete_file()
+POST /{file_id}/duplicate         au_duplicate_file()
+PUT /{file_id}/move               au_move_file()
 
 SQL Function          Status Codes
 --------------------  --------------------------
@@ -18,6 +19,7 @@ au_delete_file        200(OK), 404(Not Found)
 au_duplicate_file     200(OK), 404(Not Found)
 au_move_file          200(OK), 409(Conflict), 404(Not Found)
 au_get_files          (no status, returns rows)
+au_get_file           (no status, returns rows)
 
 All error codes from SQL functions are properly mapped to HTTP exceptions.
 
@@ -146,28 +148,77 @@ async def create_file_node(
 
 @router.get(
     "/{owner_id}",
-    response_model=list[FileNodeRead],
+    response_model=FileNodeRead | list[FileNodeRead],
     responses={
+        404: {"description": "File not found or not accessible"},
         500: {"description": "Internal server error"},
     },
 )
 async def get_file_nodes(
     owner_id: str,
+    file_id: uuid.UUID | None = Query(default=None, description="File ID; if set, returns single file info"),
     option: FileGetOption = Query(default=FileGetOption.NODES, description="File get option"),
     parent_file_id: uuid.UUID | None = Query(default=None, description="Parent file ID for nodes option"),
     db: AsyncSession = Depends(get_db),
-) -> list[dict[str, Any]]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """
-    Retrieve file nodes
+    Retrieve file nodes (list) or a single file info.
 
-    Options:
-    - all-files: Get all files owned by user
-    - shared-files: Get files shared with user
-    - trash-files: Get deleted files (trash)
-    - nodes: Get root nodes or child nodes of a parent folder
+    - If `file_id` is provided: returns a single file/folder info via au_get_file().
+      Access rule: requester must be the owner OR have an ACL grant on the file.
+      Returns 404 if the file is missing, soft-deleted, or not accessible.
+
+    - Otherwise: returns a list of file nodes via au_get_files() using `option`:
+      - all-files:    All files owned by user
+      - shared-files: Files shared with user
+      - trash-files:  Deleted files (trash)
+      - nodes:        Root nodes or child nodes of a parent folder
     """
 
     try:
+        # Single file info mode
+        if file_id is not None:
+            result = await db.execute(
+                text("""
+                    SELECT file_id, owner_id, parent_file_id, file_type,
+                           file_name, file_url, file_ext, file_size,
+                           mime_type, description, status, message,
+                           created_at, updated_at, deleted_at
+                    FROM au_get_file(:owner_id, :file_id)
+                """),
+                {
+                    "owner_id": owner_id,
+                    "file_id": file_id,
+                },
+            )
+            row = result.fetchone()
+
+            if not row:
+                logger.info(f"pg-function: au_get_file() - not found: file_id={file_id}, owner_id={owner_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="File not found or not accessible",
+                )
+
+            return {
+                "file_id": row.file_id,
+                "owner_id": row.owner_id,
+                "parent_file_id": row.parent_file_id,
+                "file_type": row.file_type,
+                "file_name": row.file_name,
+                "file_url": row.file_url,
+                "file_ext": row.file_ext,
+                "file_size": row.file_size,
+                "mime_type": row.mime_type,
+                "description": row.description,
+                "status": row.status,
+                "message": row.message,
+                "created_at": row.created_at,
+                "updated_at": row.updated_at,
+                "deleted_at": row.deleted_at,
+            }
+
+        # List mode (au_get_files)
         result = await db.execute(
             text("""
                 SELECT file_id, owner_id, parent_file_id, file_type,
@@ -204,6 +255,9 @@ async def get_file_nodes(
             }
             for row in rows
         ]
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         msg = "Failed to retrieve file nodes"
