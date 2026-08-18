@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from uuid_utils import uuid7
 
 from app.core.logger import get_logger
-from app.core.rsmqueue import RedisStreamMessageQueue, example_sse_stream, sse_event
+from app.core.rsmqueue import HEARTBEAT_MSG_ID, RedisStreamMessageQueue, example_sse_stream, sse_event
 
 router: APIRouter = APIRouter()
 
@@ -154,7 +154,15 @@ async def subscribe_to_channel_events(
                 disconnect_check=request.is_disconnected,
                 auto_ack=False,
                 stream_method=stream_method,
+                heartbeat=True,
+                block_ms=15_000,  # heartbeat cadence when idle (must stay < proxy 60s idle timeout)
             ):
+                # Keepalive comment: prevents proxies/LBs (60s idle timeout) from
+                # dropping the SSE connection during long silent periods (e.g. LLM thinking)
+                if msg_id == HEARTBEAT_MSG_ID:
+                    yield b": keepalive\n\n"
+                    continue
+
                 # Build SSE payload
                 event_type = data.get("type", "message")
                 payload = {

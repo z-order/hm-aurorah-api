@@ -40,6 +40,9 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__, logging.INFO)
 
+# Sentinel msg_id yielded by consume_with_disconnect_check(heartbeat=True) on idle reads
+HEARTBEAT_MSG_ID = "__heartbeat__"
+
 # OPTIMIZATION: TYPE_CHECKING for better IDE support without runtime overhead
 if TYPE_CHECKING:
     from redis.asyncio import Redis  # type: ignore[import-untyped]
@@ -336,6 +339,7 @@ class RedisStreamMessageQueue:
         count: int | None = None,
         stream_method: Literal["new_messages_only", "pending_messages"] = "new_messages_only",
         auto_ack: bool = True,
+        heartbeat: bool = False,
     ) -> AsyncGenerator[tuple[str, dict[str, Any]]]:
         """
         Consume messages with periodic disconnect checks (for SSE/WebSocket).
@@ -349,6 +353,9 @@ class RedisStreamMessageQueue:
             block_ms: blocking time in milliseconds (default: self.block_ms)
             count: number of messages to read per call (default: self.read_count)
             auto_ack: if True, acknowledge messages after yielding
+            heartbeat: if True, yield (HEARTBEAT_MSG_ID, {}) whenever a blocking
+                read returns no messages, so SSE callers can send keepalives and
+                prevent proxies/load balancers from closing idle connections
 
         Yields:
             (msg_id, payload) tuples
@@ -398,6 +405,8 @@ class RedisStreamMessageQueue:
                     )
                 except RedisTimeoutError:
                     # Benign: no messages arrived within the socket read timeout
+                    if heartbeat:
+                        yield HEARTBEAT_MSG_ID, {}
                     continue
                 except Exception as e:
                     logger.error(f"Error reading from stream '{key}': {e}")
@@ -405,6 +414,8 @@ class RedisStreamMessageQueue:
                     continue
 
                 if not resp:
+                    if heartbeat:
+                        yield HEARTBEAT_MSG_ID, {}
                     continue
 
                 for _stream, messages in resp:  # type: ignore[misc]
