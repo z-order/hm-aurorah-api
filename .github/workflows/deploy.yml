@@ -28,7 +28,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             # Temporary for the later solution: Stop SSH-ing from GitHub. Use SSM instead.
             #
