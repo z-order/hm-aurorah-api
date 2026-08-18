@@ -32,6 +32,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Literal
 
 from redis import asyncio as aioredis  # type: ignore[import-untyped]
+from redis.exceptions import TimeoutError as RedisTimeoutError  # type: ignore[import-untyped]
 from uuid_utils import uuid7
 
 from app.core.config import settings
@@ -124,7 +125,9 @@ class RedisStreamMessageQueue:
             decode_responses: if True, decode bytes to strings
         """
         url = redis_url or settings.redis_url
-        self.r: Redis = aioredis.from_url(url, decode_responses=decode_responses)  # type: ignore[no-untyped-call]
+        # socket_timeout=None: redis-py 8.x defaults socket_timeout to 5s, which cuts off
+        # blocking XREADGROUP calls (block_ms=15s) with a spurious TimeoutError on idle channels.
+        self.r: Redis = aioredis.from_url(url, decode_responses=decode_responses, socket_timeout=None)  # type: ignore[no-untyped-call]
         self.prefix: str = stream_prefix
         self.group: str = consumer_group
         self.stream_id_type: Literal["stream_from_beginning", "stream_from_new_only"] = stream_id_type
@@ -291,6 +294,9 @@ class RedisStreamMessageQueue:
                         count=read_count,
                         block=block,
                     )
+                except RedisTimeoutError:
+                    # Benign: no messages arrived within the socket read timeout
+                    continue
                 except Exception as e:
                     logger.error(f"Error reading from stream '{key}': {e}")
                     await asyncio.sleep(1.0)
@@ -390,6 +396,9 @@ class RedisStreamMessageQueue:
                         count=read_count,
                         block=block,
                     )
+                except RedisTimeoutError:
+                    # Benign: no messages arrived within the socket read timeout
+                    continue
                 except Exception as e:
                     logger.error(f"Error reading from stream '{key}': {e}")
                     await asyncio.sleep(1.0)

@@ -16,8 +16,9 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any
+from typing import Any, cast
 
+from langgraph_sdk.schema import StreamPart
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -26,9 +27,13 @@ from app.core.logger import get_logger
 from app.core.rsmqueue import RedisStreamMessageQueue
 from app.models.file_translation import FileTranslationCreate
 from app.services.langgraph_chunk_processor import get_langgraph_chunk_collector, process_langgraph_chunk
-from app.services.langgraph_client import AssistantID, langgraph_client
+from app.services.langgraph_client import AssistantID, ParsedChunk, format_task_error, langgraph_client
 
 logger = get_logger(__name__, logging.DEBUG)
+
+# The langgraph-api layer redacts exceptions raised outside the wrapped graph nodes
+# with this message. When we see it, fall back to get_run_outcome() for a better detail.
+_MASKED_STREAM_ERROR = "An internal error occurred"
 
 
 # =============================================================================
@@ -168,11 +173,16 @@ async def bg_atask_create_file_translation(
 
         # Initialize chunk collector based on AI agent type
         chunk_collector = get_langgraph_chunk_collector(ai_agent_id)
+        run_error: str | None = None
 
         # Process each chunk from the LangGraph stream
         async for chunk in async_generator:
             # Parse the chunk using LangGraph client
             parsed_chunk = await langgraph_client.parse_chunk(user_id, task_id, thread_id, chunk)
+
+            stream_error = _extract_stream_error(chunk, parsed_chunk)
+            if stream_error:
+                run_error = stream_error
 
             # Process and collect the chunk
             await process_langgraph_chunk(
@@ -186,6 +196,24 @@ async def bg_atask_create_file_translation(
             if parsed_chunk and parsed_chunk["event"] == "metadata" and parsed_chunk["run_id"]:
                 last_run_id = parsed_chunk["run_id"]
                 ai_agent_data["last_run_id"] = last_run_id
+
+        # Fall back to the run/thread outcome when the stream carried no error, or only
+        # the redacted message from the langgraph-api layer itself.
+        if last_run_id and (run_error is None or run_error == _MASKED_STREAM_ERROR):
+            _, sdk_error = await langgraph_client.get_run_outcome(thread_id, last_run_id)
+            if sdk_error:
+                run_error = sdk_error
+
+        if run_error:
+            logger.error(f"Translation run failed: translation_id={translation_id}, error={run_error}")
+            await _update_translation_status(
+                translation_id=translation_id,
+                ai_agent_data=ai_agent_data,
+                status="failed",
+                message=run_error,
+            )
+            await mq.send(rsmq_channel_id, {"type": "error", "message": run_error})
+            return
 
         # -------------------------------------------------------------------------
         # STEP 8: Format collected chunks into translated_text
@@ -260,6 +288,30 @@ async def bg_atask_create_file_translation(
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
+
+def _extract_stream_error(chunk: StreamPart, parsed_chunk: ParsedChunk | None) -> str | None:
+    """Extract a run failure message from a LangGraph stream chunk, if present."""
+    chunk_data = cast(dict[str, Any] | None, chunk.data)
+
+    # Stream "error" event: {"error": "RuntimeError", "message": "APIError: ..."}
+    if chunk.event == "error":
+        return format_task_error(chunk_data)
+
+    # "tasks" event with a failed node: task_error is a repr-style string or dict
+    if parsed_chunk and parsed_chunk["event"] == "tasks" and parsed_chunk.get("task_error"):
+        return format_task_error(parsed_chunk["task_error"])
+
+    # "events" error callbacks from graph execution
+    if chunk.event == "events" and isinstance(chunk_data, dict):
+        inner_event = chunk_data.get("event")
+        if inner_event in ("on_chain_error", "on_tool_error", "on_llm_error"):
+            data = chunk_data.get("data")
+            if isinstance(data, dict):
+                error = cast(dict[str, Any], data).get("error") or cast(dict[str, Any], data).get("message")
+                return format_task_error(error)
+
+    return None
 
 
 async def _get_file_preset(

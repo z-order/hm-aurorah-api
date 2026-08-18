@@ -15,6 +15,7 @@ CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 
 -- Seed data for au_system_ai_agents
+DELETE FROM au_system_ai_agents;
 INSERT INTO au_system_ai_agents (ai_agent_id, ai_agent_title, ai_agent_keyword, ui_sort_order, description)
 VALUES
     ('task_translation_a1', 'Aurorah-A1', 'AI Translation', 'A01', 'AI agent for translation tasks'),
@@ -23,18 +24,20 @@ ON CONFLICT (ai_agent_id) DO NOTHING;
 
 
 -- Seed data for au_system_llm_models
+DELETE FROM au_system_llm_models;
 INSERT INTO au_system_llm_models (llm_model_id, llm_model_title, llm_model_keyword, ui_sort_order, provider)
 VALUES
     -- Anthropic models
     ('claude-fable-5', 'Anthropic Claude Fable 5', 'Flagship (Mythos)', 'A01', 'anthropic'),
-    ('claude-opus-4-8', 'Anthropic Claude Opus 4.8', 'Flagship', 'A02', 'anthropic'),
-    ('claude-sonnet-5', 'Anthropic Claude Sonnet 5', 'Balanced', 'A03', 'anthropic'),
-    ('claude-opus-4-7', 'Anthropic Claude Opus 4.7', 'High quality', 'A04', 'anthropic'),
-    ('claude-opus-4-6', 'Anthropic Claude Opus 4.6', 'High quality', 'A05', 'anthropic'),
-    ('claude-sonnet-4-6', 'Anthropic Claude Sonnet 4.6', 'Balanced', 'A06', 'anthropic'),
-    ('claude-opus-4-5-20251101', 'Anthropic Claude 4.5 Opus', 'Legacy/Stable', 'A07', 'anthropic'),
-    ('claude-sonnet-4-5-20250929', 'Anthropic Claude 4.5 Sonnet', 'Legacy/Stable', 'A08', 'anthropic'),
-    ('claude-haiku-4-5-20251001', 'Anthropic Claude 4.5 Haiku', 'Fast', 'A09', 'anthropic'),
+    ('claude-opus-5', 'Anthropic Claude Opus 5', 'Flagship', 'A02', 'anthropic'),
+    ('claude-opus-4-8', 'Anthropic Claude Opus 4.8', 'High quality', 'A03', 'anthropic'),
+    ('claude-sonnet-5', 'Anthropic Claude Sonnet 5', 'Balanced', 'A04', 'anthropic'),
+    ('claude-opus-4-7', 'Anthropic Claude Opus 4.7', 'High quality', 'A05', 'anthropic'),
+    ('claude-opus-4-6', 'Anthropic Claude Opus 4.6', 'High quality', 'A06', 'anthropic'),
+    ('claude-sonnet-4-6', 'Anthropic Claude Sonnet 4.6', 'Balanced', 'A07', 'anthropic'),
+    ('claude-opus-4-5-20251101', 'Anthropic Claude 4.5 Opus', 'Legacy/Stable', 'A08', 'anthropic'),
+    ('claude-sonnet-4-5-20250929', 'Anthropic Claude 4.5 Sonnet', 'Legacy/Stable', 'A09', 'anthropic'),
+    ('claude-haiku-4-5-20251001', 'Anthropic Claude 4.5 Haiku', 'Fast', 'A10', 'anthropic'),
     -- OpenAI models
     ('gpt-5.6-sol', 'OpenAI GPT-5.6 Sol', 'Flagship', 'B01', 'openai'),
     ('gpt-5.6-terra', 'OpenAI GPT-5.6 Terra', 'Balanced', 'B02', 'openai'),
@@ -53,17 +56,23 @@ VALUES
     ('o3', 'OpenAI o3', 'Reasoning', 'B15', 'openai'),
     ('o4-mini', 'OpenAI o4 Mini', 'Reasoning', 'B16', 'openai'),
     -- Google Gemini models
-    ('gemini-3.5-flash', 'Google Gemini 3.5 Flash', 'Flagship', 'C01', 'google'),
-    ('gemini-3.1-pro-preview', 'Google Gemini 3.1 Pro', 'High quality', 'C02', 'google'),
-    ('gemini-3.1-flash-lite', 'Google Gemini 3.1 Flash Lite', 'Fast', 'C03', 'google'),
-    ('gemini-3-pro-preview', 'Google Gemini 3 Pro', 'Legacy/Stable', 'C04', 'google'),
-    ('gemini-3-flash-preview', 'Google Gemini 3 Flash', 'Legacy/Stable', 'C05', 'google'),
+    ('gemini-3.7-flash', 'Google Gemini 3.7 Flash', 'Flagship', 'C01', 'google'),
+    ('gemini-3.6-flash', 'Google Gemini 3.6 Flash', 'High quality', 'C02', 'google'),
+    ('gemini-3.5-flash', 'Google Gemini 3.5 Flash', 'High quality', 'C03', 'google'),
+    ('gemini-3.5-flash-lite', 'Google Gemini 3.5 Flash Lite', 'Fast', 'C04', 'google'),
+    ('gemini-3.1-pro-preview', 'Google Gemini 3.1 Pro', 'High quality', 'C05', 'google'),
+    ('gemini-3.1-flash-lite', 'Google Gemini 3.1 Flash Lite', 'Fast', 'C06', 'google'),
+    ('gemini-3-pro-preview', 'Google Gemini 3 Pro', 'Legacy/Stable', 'C07', 'google'),
+    ('gemini-3-flash-preview', 'Google Gemini 3 Flash', 'Legacy/Stable', 'C08', 'google'),
     -- xAI Grok models
-    ('grok-4.5', 'xAI Grok 4.5', 'Flagship', 'D01', 'xai'),
-    ('grok-4.3', 'xAI Grok 4.3', 'High quality', 'D02', 'xai'),
-    ('grok-4.20-0309-reasoning', 'xAI Grok 4.20 (Reasoning)', 'Reasoning', 'D03', 'xai'),
-    ('grok-4.20-0309-non-reasoning', 'xAI Grok 4.20 (Non-Reasoning)', 'Balanced', 'D04', 'xai'),
-    ('grok-4.20-multi-agent-0309', 'xAI Grok 4.20 Multi-Agent', 'Multi-Agent', 'D05', 'xai')
+    ('grok-4.6', 'xAI Grok 4.6', 'Flagship', 'D01', 'xai'),
+    ('grok-4.5', 'xAI Grok 4.5', 'High quality', 'D02', 'xai'),
+    ('grok-4.3', 'xAI Grok 4.3', 'High quality', 'D03', 'xai'),
+    ('grok-4.20-0309-reasoning', 'xAI Grok 4.20 (Reasoning)', 'Reasoning', 'D04', 'xai'),
+    ('grok-4.20-0309-non-reasoning', 'xAI Grok 4.20 (Non-Reasoning)', 'Balanced', 'D05', 'xai'),
+    ('grok-4.20-multi-agent-0309', 'xAI Grok 4.20 Multi-Agent', 'Multi-Agent', 'D06', 'xai'),
+    -- Moonshot AI Kimi models
+    ('kimi-k3', 'Moonshot Kimi K3', 'Flagship', 'E01', 'moonshot')
 ON CONFLICT (llm_model_id) DO NOTHING;
 -- Note: Excluded models with open_to_use=False in model.py:
 --   claude-3.5-sonnet, claude-3-opus, claude-3.5-haiku, claude-3-5-sonnet-20240620,

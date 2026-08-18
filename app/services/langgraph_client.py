@@ -96,6 +96,7 @@ Event Hierarchy in stream_mode=["updates", "tasks", "events"]:
 """
 
 import logging
+import re
 from collections.abc import AsyncGenerator
 from enum import Enum
 from pprint import pformat
@@ -199,6 +200,50 @@ class ParsedChunk_Events(TypedDict):
 
 
 ParsedChunk = ParsedChunk_Metadata | ParsedChunk_Values | ParsedChunk_Tasks | ParsedChunk_Updates | ParsedChunk_Events
+
+
+# Matches repr-style exception strings, e.g. RuntimeError("APIError: ...") or ValueError('...').
+# hm-aurorah-lang re-raises redacted provider errors as RuntimeError("<OriginalType>: <message>"),
+# so unwrapping the outer wrapper recovers the original message.
+_EXCEPTION_REPR_RE = re.compile(r"^[A-Za-z_][\w.]*\((?P<quote>[\"'])(?P<message>.*)(?P=quote)\)$", re.DOTALL)
+
+
+def format_task_error(task_error: Any) -> str | None:
+    """
+    Normalize a LangGraph task/stream error into a clean human-readable message.
+
+    Handles the hm-aurorah-lang error formats:
+    - Dict form: {"error": "RuntimeError", "message": "APIError: ..."} -> "APIError: ..."
+    - Repr-style string: 'RuntimeError("APIError: ...")' -> "APIError: ..."
+    - Plain strings are returned as-is.
+
+    Args:
+        task_error: Error value from a stream chunk, tasks event, or thread state
+
+    Returns:
+        Clean error message, or None if there is no meaningful error
+    """
+    if task_error is None:
+        return None
+
+    if isinstance(task_error, dict):
+        error_dict = cast(dict[str, Any], task_error)
+        message = error_dict.get("message") or error_dict.get("error")
+        if message is None:
+            return str(task_error)
+        return format_task_error(message)
+
+    error_text = str(task_error).strip()
+    if not error_text:
+        return None
+
+    match = _EXCEPTION_REPR_RE.match(error_text)
+    if match:
+        inner_message = match.group("message").strip()
+        if inner_message:
+            return inner_message
+
+    return error_text
 
 
 class LangGraphClientSDK:
@@ -691,22 +736,34 @@ class LangGraphClientSDK:
                 chunk_data = event_data_in_data.get("chunk", {})
 
                 # AI text message chunk (Heierachy: data -> data -> chunk -> content)
-                if (
-                    chunk_data.get("content")
-                    and isinstance(chunk_data["content"], str)
-                    and chunk_data.get("type") == "AIMessageChunk"
-                ):
-                    print(chunk_data["content"], end="", flush=True)
+                # Content can be a plain string (Claude, Kimi, Grok, ...) or a list of
+                # content blocks (Gemini thinking models): [{"type": "text", "text": "..."}]
+                if chunk_data.get("content") and chunk_data.get("type") == "AIMessageChunk":
+                    content = chunk_data["content"]
+                    if isinstance(content, str):
+                        text_content = content
+                    elif isinstance(content, list):
+                        # Concatenate only "text" blocks (skip "thinking"/"reasoning" blocks)
+                        text_content = "".join(
+                            str(cast(dict[str, Any], block).get("text", ""))
+                            for block in cast(list[Any], content)
+                            if isinstance(block, dict) and cast(dict[str, Any], block).get("type") == "text"
+                        )
+                    else:
+                        text_content = ""
 
-                    parsed_events_text: ParsedChunk_Events = {  # pyright: ignore[reportRedeclaration]
-                        "event": "events",
-                        "event_name": "on_chat_model_stream",
-                        "is_ai_message": True,
-                        "is_tool_call": False,
-                        "event_data": event_data_in_data,
-                        "chunk_data": chunk_data["content"],
-                    }
-                    return parsed_events_text
+                    if text_content:
+                        print(text_content, end="", flush=True)
+
+                        parsed_events_text: ParsedChunk_Events = {  # pyright: ignore[reportRedeclaration]
+                            "event": "events",
+                            "event_name": "on_chat_model_stream",
+                            "is_ai_message": True,
+                            "is_tool_call": False,
+                            "event_data": event_data_in_data,
+                            "chunk_data": text_content,
+                        }
+                        return parsed_events_text
 
                 #
                 # AI tool call chunk (Heierachy: data -> data -> chunk -> tool_call_chunks[] -> args)
@@ -731,6 +788,62 @@ class LangGraphClientSDK:
                             "chunk_data": tool_call_chunk["args"],
                         }
                         return parsed_events_tool_call
+
+    async def _get_thread_error_detail(self, client: LangGraphClient, thread_id: str) -> str | None:
+        """
+        Get a clean error message from the thread state tasks, if any.
+
+        Args:
+            client: LangGraph client
+            thread_id: Thread ID
+
+        Returns:
+            Clean error message from the first failed task, or None
+        """
+        try:
+            state: ThreadState = await client.threads.get_state(thread_id)
+        except Exception as e:
+            logger.warning(f"Failed to get thread state for error detail (thread: {thread_id}): {e}")
+            return None
+
+        tasks = cast(list[Any], state.get("tasks", []) or [])
+        for task in tasks:
+            if not isinstance(task, dict):
+                continue
+            error_detail = format_task_error(cast(dict[str, Any], task).get("error"))
+            if error_detail:
+                return error_detail
+        return None
+
+    async def get_run_outcome(self, thread_id: str, run_id: str) -> tuple[str, str | None]:
+        """
+        Get the final run and thread status after a stream completes.
+
+        Returns:
+            Tuple of (run_status, failure_message). failure_message is set when the run
+            did not succeed.
+        """
+        __caller__ = "get_run_outcome"
+
+        client: LangGraphClient = await self.get_client(caller=__caller__)
+        run = await client.runs.get(thread_id, run_id)
+        run_status = cast(str, run.get("status", ""))
+
+        if run_status == "success":
+            return run_status, None
+
+        thread = await client.threads.get(thread_id)
+        thread_status = cast(str, thread.get("status", ""))
+
+        if run_status in ("error", "timeout", "interrupted"):
+            error_detail = await self._get_thread_error_detail(client, thread_id)
+            return run_status, error_detail or f"LangGraph run failed with status '{run_status}'"
+
+        if thread_status == "error":
+            error_detail = await self._get_thread_error_detail(client, thread_id)
+            return run_status or thread_status, error_detail or "LangGraph thread ended with status 'error'"
+
+        return run_status, None
 
     async def parse_state(self, user_id: str, task_id: str, thread_id: str, assistant_id: AssistantID) -> None:
         """
